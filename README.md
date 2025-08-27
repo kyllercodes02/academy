@@ -7,124 +7,61 @@
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
 </p>
 
-# Academy Management System
+## About Laravel
 
-A comprehensive Laravel-based school management system for handling students, teachers, attendance, and administrative tasks.
+Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
 
-## Features
+- [Simple, fast routing engine](https://laravel.com/docs/routing).
+- [Powerful dependency injection container](https://laravel.com/docs/container).
+- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
+- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
+- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
+- [Robust background job processing](https://laravel.com/docs/queues).
+- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
 
-- **Student Management**: Register and manage student information
-- **Teacher Management**: Handle teacher profiles and assignments
-- **Attendance Tracking**: Monitor student attendance with NFC support
-- **Grade Level Management**: Organize students by grade levels and sections
-- **Guardian Portal**: Parent/guardian access to student information
-- **Admin Dashboard**: Comprehensive administrative interface
-- **Real-time Notifications**: Instant updates for important events
-- **PDF Reports**: Generate attendance and other reports
-- **Excel Import/Export**: Bulk data management capabilities
+Laravel is accessible, powerful, and provides tools required for large, robust applications.
 
-## Technology Stack
+## Learning Laravel
 
-- **Backend**: Laravel 11 (PHP)
-- **Frontend**: React.js with Inertia.js
-- **Styling**: Tailwind CSS
-- **Database**: SQLite (development) / MySQL/PostgreSQL (production)
-- **Authentication**: Laravel Sanctum
-- **File Management**: Laravel Storage
-- **PDF Generation**: DomPDF
-- **Excel Processing**: Laravel Excel
+Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
 
-## Prerequisites
+You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
 
-- PHP 8.2 or higher
-- Composer
-- Node.js and npm
-- Git
+If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
 
-## Installation
+## Laravel Sponsors
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/kyllercodes02/academy.git
-   cd academy
-   ```
+We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
 
-2. **Install PHP dependencies**
-   ```bash
-   composer install
-   ```
+### Premium Partners
 
-3. **Install Node.js dependencies**
-   ```bash
-   npm install
-   ```
-
-4. **Environment setup**
-   ```bash
-   cp .env.example .env
-   php artisan key:generate
-   ```
-
-5. **Database setup**
-   ```bash
-   php artisan migrate
-   php artisan db:seed
-   ```
-
-6. **Build assets**
-   ```bash
-   npm run build
-   ```
-
-7. **Start the development server**
-   ```bash
-   php artisan serve
-   ```
-
-## Usage
-
-### Admin Access
-- URL: `/admin/login`
-- Default credentials: Check the database seeders
-
-### Teacher Access
-- URL: `/teacher/login`
-- Teachers can manage their assigned sections and track attendance
-
-### Guardian Access
-- URL: `/guardian/login`
-- Guardians can view their children's information and attendance
-
-## Development
-
-### Running Tests
-```bash
-php artisan test
-```
-
-### Code Quality
-```bash
-./vendor/bin/pint
-```
-
-### Database Migrations
-```bash
-php artisan migrate
-php artisan migrate:rollback
-```
+- **[Vehikl](https://vehikl.com/)**
+- **[Tighten Co.](https://tighten.co)**
+- **[WebReinvent](https://webreinvent.com/)**
+- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
+- **[64 Robots](https://64robots.com)**
+- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
+- **[Cyber-Duck](https://cyber-duck.co.uk)**
+- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
+- **[Jump24](https://jump24.co.uk)**
+- **[Redberry](https://redberry.international/laravel/)**
+- **[Active Logic](https://activelogic.com)**
+- **[byte5](https://byte5.de)**
+- **[OP.GG](https://op.gg)**
 
 ## Contributing
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+
+## Code of Conduct
+
+In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+
+## Security Vulnerabilities
+
+If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
 
 ## License
 
-This project is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
-
-## Support
-
-For support, email support@academy.com or create an issue in this repository.
+The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+# academy

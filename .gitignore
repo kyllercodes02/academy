@@ -71,3 +71,6 @@ logs/**
 # Other
 coverage/
 **/*.log
+
+# Uploaded assets
+/storage/app/public/
