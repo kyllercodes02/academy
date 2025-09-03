@@ -6,6 +6,8 @@ import { format as formatDateFns } from 'date-fns';
 import { utcToZonedTime } from 'date-fns-tz';
 import { CreditCard, User, Clock, Calendar, CheckCircle2, XCircle, Scan, Wifi, Zap, Shield, UserCheck } from 'lucide-react';
 import { usePage } from '@inertiajs/react';
+import Echo from 'laravel-echo';
+import Pusher from 'pusher-js';
 
 export default function Welcome() {
     const { props } = usePage();
@@ -83,6 +85,20 @@ export default function Welcome() {
 
     // Listen for real-time SecurityAlertNotification via Echo
     useEffect(() => {
+        if (!window.Echo) {
+            // Initialize Echo if not already initialized
+            const key = import.meta.env.VITE_PUSHER_APP_KEY;
+            const cluster = import.meta.env.VITE_PUSHER_APP_CLUSTER;
+            if (key && cluster) {
+                window.Pusher = Pusher;
+                window.Echo = new Echo({
+                    broadcaster: 'pusher',
+                    key,
+                    cluster,
+                    forceTLS: true
+                });
+            }
+        }
         if (window.Echo) {
             const channel = window.Echo.private('admin')
                 .notification((notification) => {
@@ -106,6 +122,23 @@ export default function Welcome() {
                 }
             };
         }
+    }, []);
+
+    // Listen for real-time AttendanceUpdated to show API-like message
+    useEffect(() => {
+        if (!window.Echo) return;
+
+        const publicChannel = window.Echo.channel('attendance.public')
+            .listen('AttendanceUpdated', (e) => {
+                const msg = e?.message || `${e?.studentName || 'A student'} has ${e?.checkOutTime ? 'checked out' : 'checked in'}.`;
+                toast.success(msg);
+            });
+
+        return () => {
+            if (window.Echo) {
+                window.Echo.leave('attendance.public');
+            }
+        };
     }, []);
 
     const handleCardSubmit = async (e) => {

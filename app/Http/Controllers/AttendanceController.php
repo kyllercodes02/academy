@@ -123,6 +123,14 @@ class AttendanceController extends Controller
                 'updated_at' => $currentTime
             ]);
 
+            event(new \App\Events\AttendanceUpdated(
+                $student->id,
+                $status,
+                $currentTime->format('H:i:s'),
+                null,
+                null
+            ));
+
             return response()->json([
                 'success' => true,
                 'message' => 'Attendance updated successfully',
@@ -133,7 +141,7 @@ class AttendanceController extends Controller
             ]);
         } else {
             // Create new attendance record
-            Attendance::create([
+            $created = Attendance::create([
                 'student_id' => $student->id,
                 'date' => $date,
                 'status' => $status,
@@ -141,6 +149,14 @@ class AttendanceController extends Controller
                 'created_at' => $currentTime,
                 'updated_at' => $currentTime
             ]);
+
+            event(new \App\Events\AttendanceUpdated(
+                $student->id,
+                $status,
+                $currentTime->format('H:i:s'),
+                null,
+                null
+            ));
 
             return response()->json([
                 'success' => true,
@@ -192,6 +208,14 @@ class AttendanceController extends Controller
                 'remarks' => $request->remarks ?? null
             ]
         );
+
+        event(new \App\Events\AttendanceUpdated(
+            $request->student_id,
+            $attendance->status,
+            $attendance->check_in_time,
+            $attendance->check_out_time,
+            $attendance->remarks
+        ));
 
         return response()->json([
             'success' => true,

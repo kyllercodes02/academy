@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 // Admin guest routes (login)
-Route::middleware('web')->prefix('admin')->group(function () {
+Route::middleware(['web', 'guest'])->prefix('admin')->group(function () {
     Route::get('/login', [AuthenticatedSessionController::class, 'create'])
         ->name('admin.login');
     Route::post('/login', [AuthenticatedSessionController::class, 'store'])

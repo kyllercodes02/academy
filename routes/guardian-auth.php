@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 // Guardian guest routes (login)
-Route::middleware('guest')->group(function () {
+Route::middleware(['web', 'guest'])->group(function () {
     Route::get('guardian', [AuthenticatedSessionController::class, 'create'])
         ->name('guardian.login');
     Route::post('guardian', [AuthenticatedSessionController::class, 'store'])

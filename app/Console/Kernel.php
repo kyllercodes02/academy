@@ -16,6 +16,8 @@ class Kernel extends ConsoleKernel
         Commands\CreateTestGuardian::class,
         Commands\CreateAdminCommand::class,
         Commands\VerifyUserCredentials::class,
+        Commands\TestSendSms::class,
+        Commands\SimulateAttendanceEvent::class,
     ];
 
     /**

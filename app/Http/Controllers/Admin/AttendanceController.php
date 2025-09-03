@@ -144,7 +144,7 @@ class AttendanceController extends Controller
         $currentTime = Carbon::now();
 
         foreach ($request->students as $studentData) {
-            Attendance::updateOrCreate(
+            $attendance = Attendance::updateOrCreate(
                 [
                     'student_id' => $studentData['id'],
                     'date' => $date,
@@ -155,6 +155,14 @@ class AttendanceController extends Controller
                     'check_in_time' => $studentData['status'] !== 'absent' ? $currentTime->format('H:i:s') : null,
                 ]
             );
+
+            event(new \App\Events\AttendanceUpdated(
+                $studentData['id'],
+                $attendance->status,
+                $attendance->check_in_time,
+                $attendance->check_out_time,
+                $attendance->remarks
+            ));
         }
 
         return back()->with('success', 'Attendance records updated successfully.');
@@ -197,14 +205,16 @@ class AttendanceController extends Controller
             $updateData
         );
 
-        // Broadcast the attendance update
-        broadcast(new \App\Events\AttendanceUpdated(
+        // Broadcast and dispatch the attendance update
+        $event = new \App\Events\AttendanceUpdated(
             $request->student_id,
             $attendance->status,
             $attendance->check_in_time,
             $attendance->check_out_time,
             $attendance->remarks
-        ))->toOthers();
+        );
+        broadcast($event)->toOthers();
+        event($event);
 
         return back()->with('success', 'Attendance record updated successfully.');
     }
@@ -233,14 +243,16 @@ class AttendanceController extends Controller
         $attendance->check_out_time = now()->format('H:i:s');
         $attendance->save();
 
-        // Broadcast the attendance update
-        broadcast(new \App\Events\AttendanceUpdated(
+        // Broadcast and dispatch the attendance update
+        $event = new \App\Events\AttendanceUpdated(
             $request->student_id,
             $attendance->status,
             $attendance->check_in_time,
             $attendance->check_out_time,
             $attendance->remarks
-        ))->toOthers();
+        );
+        broadcast($event)->toOthers();
+        event($event);
 
         return back()->with('success', 'Check-out recorded successfully.');
     }
@@ -266,7 +278,7 @@ class AttendanceController extends Controller
         $currentTime = Carbon::now();
 
         foreach ($students as $student) {
-            Attendance::updateOrCreate(
+            $attendance = Attendance::updateOrCreate(
                 [
                     'student_id' => $student->id,
                     'date' => $request->date,
@@ -276,6 +288,14 @@ class AttendanceController extends Controller
                     'check_in_time' => $request->status !== 'absent' ? $currentTime->format('H:i:s') : null,
                 ]
             );
+
+            event(new \App\Events\AttendanceUpdated(
+                $student->id,
+                $attendance->status,
+                $attendance->check_in_time,
+                $attendance->check_out_time,
+                $attendance->remarks
+            ));
         }
 
         return back()->with('success', 'Attendance records updated successfully.');

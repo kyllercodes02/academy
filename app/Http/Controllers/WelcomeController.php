@@ -46,6 +46,14 @@ class WelcomeController extends Controller
                 'date' => $now->toDateString(),
             ]);
 
+            event(new \App\Events\AttendanceUpdated(
+                $student->id,
+                $attendance->status,
+                $attendance->check_in_time,
+                null,
+                null
+            ));
+
             return response()->json([
                 'status' => 'success',
                 'message' => 'Student checked in successfully.',
@@ -70,6 +78,14 @@ class WelcomeController extends Controller
 
             // Refresh the model to get the updated check_out_time
             $todayAttendance->refresh();
+
+            event(new \App\Events\AttendanceUpdated(
+                $student->id,
+                $todayAttendance->status,
+                $todayAttendance->check_in_time,
+                $todayAttendance->check_out_time,
+                $todayAttendance->remarks
+            ));
 
             return response()->json([
                 'status' => 'success',
@@ -134,6 +150,13 @@ class WelcomeController extends Controller
                 'status' => $now->hour >= 8 ? 'late' : 'present',
                 'date' => $now->toDateString(),
             ]);
+            event(new \App\Events\AttendanceUpdated(
+                $student->id,
+                $attendance->status,
+                $attendance->check_in_time,
+                null,
+                null
+            ));
 
             $response['message'] = 'Check-in successful';
             $response['check_in_time'] = $attendance->check_in_time;
@@ -148,6 +171,14 @@ class WelcomeController extends Controller
                 
                 // Refresh the model to get the updated check_out_time
                 $todayAttendance->refresh();
+
+                event(new \App\Events\AttendanceUpdated(
+                    $student->id,
+                    $todayAttendance->status,
+                    $todayAttendance->check_in_time,
+                    $todayAttendance->check_out_time,
+                    $todayAttendance->remarks
+                ));
                 
                 $response['message'] = 'Check-out successful';
                 $response['action'] = 'check_out';

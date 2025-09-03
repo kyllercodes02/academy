@@ -36,18 +36,9 @@ class RouteServiceProvider extends ServiceProvider
                 ->prefix('api')
                 ->group(base_path('routes/api.php'));
 
+            // Load only web.php; it includes role-specific routes
             Route::middleware('web')
                 ->group(base_path('routes/web.php'));
-
-            // Load role-specific auth routes
-            Route::middleware('web')
-                ->group(base_path('routes/admin-auth.php'));
-
-            Route::middleware('web')
-                ->group(base_path('routes/teacher-auth.php'));
-
-            Route::middleware('web')
-                ->group(base_path('routes/guardian-auth.php'));
         });
     }
 } 

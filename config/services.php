@@ -35,4 +35,13 @@ return [
         ],
     ],
 
+    'twilio' => [
+        'enabled' => env('TWILIO_ENABLED', false),
+        'sid' => env('TWILIO_SID'),
+        'token' => env('TWILIO_TOKEN'),
+        'from' => env('TWILIO_FROM'),
+        // Optional: default country code for normalizing local numbers (e.g., '63' for PH)
+        'default_country_code' => env('TWILIO_DEFAULT_COUNTRY_CODE'),
+    ],
+
 ];
