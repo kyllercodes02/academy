@@ -35,13 +35,16 @@ return [
         ],
     ],
 
-    'twilio' => [
-        'enabled' => env('TWILIO_ENABLED', false),
-        'sid' => env('TWILIO_SID'),
-        'token' => env('TWILIO_TOKEN'),
-        'from' => env('TWILIO_FROM'),
-        // Optional: default country code for normalizing local numbers (e.g., '63' for PH)
-        'default_country_code' => env('TWILIO_DEFAULT_COUNTRY_CODE'),
-    ],
+   'twilio' => [
+    'enabled' => env('TWILIO_ENABLED', false),
+    'sid' => env('TWILIO_ACCOUNT_SID'),
+    'token' => env('TWILIO_AUTH_TOKEN'),
+    'from' => env('TWILIO_FROM'),
+    'messaging_service_sid' => env('TWILIO_MSG_SERVICE_SID'),
+    // Optional: used to normalize local numbers to E.164 (e.g. +63)
+    'default_country_code' => env('TWILIO_DEFAULT_COUNTRY_CODE'),
+],
+
+
 
 ];

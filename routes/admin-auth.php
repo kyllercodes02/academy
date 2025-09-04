@@ -13,12 +13,15 @@ use App\Http\Controllers\Admin\AnnouncementController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-// Admin guest routes (login)
+// Admin guest routes (redirect to unified login)
 Route::middleware(['web', 'guest'])->prefix('admin')->group(function () {
-    Route::get('/login', [AuthenticatedSessionController::class, 'create'])
-        ->name('admin.login');
-    Route::post('/login', [AuthenticatedSessionController::class, 'store'])
-        ->name('admin.login.store');
+    Route::get('/login', function () {
+        return redirect()->route('login');
+    })->name('admin.login');
+
+    Route::post('/login', function () {
+        return redirect()->route('login.store');
+    })->name('admin.login.store');
 });
 
 // Admin authenticated routes

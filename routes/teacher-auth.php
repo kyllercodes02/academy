@@ -11,12 +11,14 @@ use App\Http\Controllers\Auth\ConfirmablePasswordController;
 use App\Http\Controllers\Auth\PasswordController;
 use Illuminate\Support\Facades\Route;
 
-// Teacher guest routes (login and password reset)
+// Teacher guest routes (login redirects to unified login); keep password reset here if needed
 Route::middleware(['web', 'guest'])->prefix('teacher')->name('teacher.')->group(function () {
-    Route::get('/login', [AuthenticatedSessionController::class, 'create'])
-        ->name('login');
-    Route::post('/login', [AuthenticatedSessionController::class, 'store'])
-        ->name('login.store');
+    Route::get('/login', function () {
+        return redirect()->route('login');
+    })->name('login');
+    Route::post('/login', function () {
+        return redirect()->route('login.store');
+    })->name('login.store');
 
     // Password Reset Routes
     Route::get('/forgot-password', [PasswordResetLinkController::class, 'create'])

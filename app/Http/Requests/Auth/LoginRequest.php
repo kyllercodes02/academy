@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use App\Models\User;
+use App\Models\Admin;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
 
@@ -44,57 +45,29 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        // Find the user by email
-        $user = User::where('email', $this->input('email'))->first();
-        
-        // Log authentication attempt details
-        Log::info('Authentication attempt', [
-            'email' => $this->input('email'),
-            'route' => $this->route()->getName(),
-            'user_exists' => $user ? 'yes' : 'no',
-            'user_role' => $user ? $user->role : 'none',
-            'password_provided' => !empty($this->input('password')),
-            'password_hashed' => $user ? !empty($user->password) : false
+        $email = $this->input('email');
+        $password = $this->input('password');
+
+        // Try to locate an admin first by email; if none, fall back to user
+        $admin = Admin::where('email', $email)->first();
+        $user = $admin ? null : User::where('email', $email)->first();
+
+        Log::info('Unified authentication attempt', [
+            'email' => $email,
+            'is_admin_email' => $admin ? 'yes' : 'no',
+            'is_user_email' => $user ? 'yes' : 'no',
         ]);
 
-        if (!$user) {
+        if (!$admin && !$user) {
             RateLimiter::hit($this->throttleKey());
             throw ValidationException::withMessages([
-                'email' => 'The provided email address was not found.',
+                'email' => 'These credentials do not match our records.',
             ]);
         }
 
-        // Check if the user has the correct role for the login route
-        $routeName = $this->route()->getName();
-        $expectedRole = null;
-
-        if (str_contains($routeName, 'admin.')) {
-            $expectedRole = 'admin';
-        } elseif (str_contains($routeName, 'teacher.')) {
-            $expectedRole = 'teacher';
-        } elseif (str_contains($routeName, 'guardian.')) {
-            $expectedRole = 'guardian';
-        }
-
-        // Log role check details
-        Log::info('Role check', [
-            'route_name' => $routeName,
-            'expected_role' => $expectedRole,
-            'user_role' => $user->role
-        ]);
-
-        if ($expectedRole && $user->role !== $expectedRole) {
-            RateLimiter::hit($this->throttleKey());
-            throw ValidationException::withMessages([
-                'email' => "This account doesn't have {$expectedRole} access.",
-            ]);
-        }
-
-        // Verify password hash
-        $passwordValid = Hash::check($this->input('password'), $user->password);
-        Log::info('Password verification', [
-            'is_valid' => $passwordValid
-        ]);
+        // Verify password against the found account
+        $hashedPassword = $admin ? $admin->password : $user->password;
+        $passwordValid = Hash::check($password, $hashedPassword);
 
         if (!$passwordValid) {
             RateLimiter::hit($this->throttleKey());
@@ -103,8 +76,15 @@ class LoginRequest extends FormRequest
             ]);
         }
 
-        // Use the default web guard for all authentication
-        if (!Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
+        // Attempt login using the appropriate guard
+        $remember = $this->boolean('remember');
+        $credentials = ['email' => $email, 'password' => $password];
+
+        $authenticated = $admin
+            ? Auth::guard('admin')->attempt($credentials, $remember)
+            : Auth::guard('web')->attempt($credentials, $remember);
+
+        if (!$authenticated) {
             RateLimiter::hit($this->throttleKey());
             throw ValidationException::withMessages([
                 'email' => 'Authentication failed. Please try again.',

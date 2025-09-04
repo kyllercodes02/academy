@@ -20,10 +20,14 @@ class RedirectIfAuthenticated
 
         // Avoid special-case redirects that can cause loops/bounces
 
-        // Check if user is authenticated
-        if (Auth::check()) {
+        // Check if user is authenticated on any relevant guard
+        if (Auth::check() || Auth::guard('admin')->check()) {
             // Let authenticated users access non-login pages; block only login pages
             if ($request->is('*/login') || $request->is('login')) {
+                if (Auth::guard('admin')->check()) {
+                    return redirect()->intended(RouteServiceProvider::ADMIN_HOME);
+                }
+
                 $user = Auth::user();
                 return match($user->role) {
                     'admin' => redirect()->intended(RouteServiceProvider::ADMIN_HOME),

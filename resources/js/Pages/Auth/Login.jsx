@@ -12,7 +12,6 @@ export default function Login({ status, canResetPassword }) {
         email: '',
         password: '',
         remember: false,
-        role: 'teacher', // Default to teacher role
     });
 
     useEffect(() => {
@@ -23,7 +22,7 @@ export default function Login({ status, canResetPassword }) {
 
     const submit = (e) => {
         e.preventDefault();
-        post(route('login'));
+        post(route('login.store'));
     };
 
     return (
@@ -74,21 +73,7 @@ export default function Login({ status, canResetPassword }) {
                         <InputError message={errors.password} className="mt-2" />
                     </div>
 
-                    <div>
-                        <InputLabel htmlFor="role" value="Login As" />
-                        <select
-                            name="role"
-                            id="role"
-                            value={data.role}
-                            onChange={(e) => setData('role', e.target.value)}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                        >
-                            <option value="teacher">Teacher</option>
-                            <option value="guardian">Guardian</option>
-                            <option value="admin">Admin</option>
-                        </select>
-                        <InputError message={errors.role} className="mt-2" />
-                    </div>
+                    
 
                     <div className="flex items-center justify-between">
                         <label className="flex items-center">

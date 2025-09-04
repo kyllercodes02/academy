@@ -10,12 +10,14 @@ use App\Http\Controllers\Guardian\ScheduleController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-// Guardian guest routes (login)
+// Guardian guest routes (redirect to unified login)
 Route::middleware(['web', 'guest'])->group(function () {
-    Route::get('guardian', [AuthenticatedSessionController::class, 'create'])
-        ->name('guardian.login');
-    Route::post('guardian', [AuthenticatedSessionController::class, 'store'])
-        ->name('guardian.login.store');
+    Route::get('guardian', function () {
+        return redirect()->route('login');
+    })->name('guardian.login');
+    Route::post('guardian', function () {
+        return redirect()->route('login.store');
+    })->name('guardian.login.store');
 });
 
 // Guardian authenticated routes

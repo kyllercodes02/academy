@@ -33,15 +33,32 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        // If there is an intended URL set by middleware and it's not welcome/login/register, honor it
+        $intended = $request->session()->pull('url.intended');
+        if ($intended) {
+            $intendedPath = parse_url($intended, PHP_URL_PATH);
+            if ($intendedPath && !in_array($intendedPath, ['/', '/login', '/register'])) {
+                return redirect()->to($intended);
+            }
+        }
+
+        // If authenticated via admin guard, go to admin home immediately
+        if (Auth::guard('admin')->check()) {
+            return redirect()->intended(RouteServiceProvider::ADMIN_HOME);
+        }
+
+        // Otherwise, use default user roles to redirect
         $user = Auth::user();
-        
-        // Redirect based on user role
-        return match($user->role) {
-            'admin' => redirect()->intended(RouteServiceProvider::ADMIN_HOME),
-            'teacher' => redirect()->intended(RouteServiceProvider::TEACHER_HOME),
-            'guardian' => redirect()->intended(RouteServiceProvider::GUARDIAN_HOME),
-            default => redirect()->intended(RouteServiceProvider::HOME),
-        };
+        if ($user && isset($user->role)) {
+            return match($user->role) {
+                'teacher' => redirect()->intended(RouteServiceProvider::TEACHER_HOME),
+                'guardian' => redirect()->intended(RouteServiceProvider::GUARDIAN_HOME),
+                'admin' => redirect()->intended(RouteServiceProvider::ADMIN_HOME),
+                default => redirect()->intended(RouteServiceProvider::HOME),
+            };
+        }
+
+        return redirect()->intended(RouteServiceProvider::HOME);
     }
 
     /**
