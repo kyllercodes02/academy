@@ -26,17 +26,13 @@ export default function Index({ guardians, filters }) {
 
     const confirmDelete = () => {
         if (selectedGuardian) {
-            router.delete(route('admin.guardians.destroy', selectedGuardian.id), {
+            router.delete(route('admin.guardians.destroy', { guardian: selectedGuardian.id }), {
                 onSuccess: () => {
                     setShowDeleteModal(false);
                     setSelectedGuardian(null);
                 },
             });
         }
-    };
-
-    const handleEdit = (guardian) => {
-        router.get(route('admin.guardians.edit', guardian.id));
     };
 
     return (
@@ -98,12 +94,12 @@ export default function Index({ guardians, filters }) {
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                    <button
-                                                        onClick={() => handleEdit(guardian)}
-                                                        className="text-indigo-600 hover:text-indigo-900 mr-4"
+                                                    <Link
+                                                        href={route('admin.guardians.edit', { guardian: guardian.id })}
+                                                        className="text-indigo-600 hover:text-indigo-900 mr-4 inline-flex"
                                                     >
                                                         <PencilIcon className="w-5 h-5" />
-                                                    </button>
+                                                    </Link>
                                                     <button
                                                         onClick={() => handleDelete(guardian)}
                                                         className="text-red-600 hover:text-red-900"

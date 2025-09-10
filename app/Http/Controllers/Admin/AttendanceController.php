@@ -270,8 +270,8 @@ class AttendanceController extends Controller
 
         $query = Student::query()->where('status', 'active');
 
-        if ($request->section !== 'All Students') {
-            $query->where('student_section', $request->section);
+        if ($request->section !== 'all') {
+            $query->where('section_id', $request->section);
         }
 
         $students = $query->get();

@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { Link, usePage, router } from '@inertiajs/react';
-import Echo from 'laravel-echo';
-import Pusher from 'pusher-js';
 import { format } from 'date-fns';
 import { utcToZonedTime } from 'date-fns-tz';
 import toast, { Toaster } from 'react-hot-toast';
@@ -26,23 +24,8 @@ import {
     ChevronLeft
 } from 'lucide-react';
 import cn from 'classnames';
+import NotificationsDropdown from '../Pages/Shared/NotificationsDropdown';
 
-// Initialize Pusher and Echo (if needed elsewhere)
-if (typeof window !== 'undefined' && !window.Pusher) {
-    window.Pusher = Pusher;
-    window.Echo = new Echo({
-        broadcaster: 'pusher',
-        key: import.meta.env.VITE_PUSHER_APP_KEY,
-        cluster: import.meta.env.VITE_PUSHER_APP_CLUSTER,
-        forceTLS: true,
-        authEndpoint: '/broadcasting/auth',
-        auth: {
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-            },
-        },
-    });
-}
 
 export default function AdminLayout({ children }) {
     const { auth, url, notifications: initialNotifications = [] } = usePage().props;
@@ -323,17 +306,16 @@ export default function AdminLayout({ children }) {
     }, []); // Only run on mount
 
     useEffect(() => {
-        // Clean up previous listeners
+        // Listen to the authenticated admin's private notification channel
         let channel;
         if (window.Echo && auth?.user?.id) {
             channel = window.Echo.private(`App.Models.Admin.${auth.user.id}`);
-            channel.listen('.Illuminate\\Notifications\\Events\\BroadcastNotificationCreated', (newNotification) => {
-                const type = newNotification.type || (newNotification.data && newNotification.data.type);
-                if (type === 'security_alert') {
-                    const notificationForState = newNotification.data ? newNotification : { ...newNotification, data: newNotification };
-                    setNotifications(prevNotifications => [notificationForState, ...prevNotifications]);
-                    setNotificationCount(prevCount => prevCount + 1);
-                    setShowNotifications(true); // Open the dropdown on real-time alert
+            channel.notification((notification) => {
+                if (notification?.type === 'security_alert') {
+                    const notificationForState = { id: notification.id || Date.now(), data: notification, read_at: null };
+                    setNotifications(prev => [notificationForState, ...prev]);
+                    setNotificationCount(prev => prev + 1);
+                    setShowNotifications(true);
                     toast.error('Security Alert: Possible fake student detected!');
                 }
             });
@@ -499,54 +481,10 @@ export default function AdminLayout({ children }) {
                             <Calendar size={16} className="text-blue-600" />
                             <span className="text-gray-600 text-sm font-medium">{today}</span>
                         </div>
-                        
-                        {/* Debug Toggle - Only show in development */}
-                        {process.env.NODE_ENV === 'development' && (
-                            <button
-                                onClick={() => setDebugMode(!debugMode)}
-                                className="px-3 py-1 bg-yellow-100 hover:bg-yellow-200 text-yellow-800 rounded-lg text-xs font-medium transition-colors"
-                                title="Toggle Route Debug"
-                            >
-                                {debugMode ? 'Hide Debug' : 'Show Debug'}
-                            </button>
-                        )}
+                        {/* Removed current page indicator per request */}
                         
                         {/* Notifications */}
-                        <div className="relative flex items-center">
-                            <button onClick={handleNotificationClick} className="group flex items-center justify-center w-10 h-10 rounded-xl hover:bg-blue-50 transition-all duration-300 text-gray-600 hover:text-blue-600 relative overflow-hidden">
-                                <div className="absolute inset-0 bg-blue-100 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl"></div>
-                                <div className="relative transform transition-transform duration-300 group-hover:scale-110">
-                                    <Bell size={18} className="text-blue-600" />
-                                </div>
-                                {notificationCount > 0 && (
-                                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center shadow-sm animate-pulse">
-                                        {notificationCount}
-                                    </span>
-                                )}
-                            </button>
-                            {/* Force dropdown to always render for debugging */}
-                            {showNotifications && (
-                                <div className="absolute right-0 mt-2 w-96 bg-white border border-gray-200 rounded-xl shadow-lg z-50">
-                                    <div className="p-4 border-b font-bold text-gray-700">Notifications</div>
-                                    <ul className="max-h-96 overflow-y-auto divide-y divide-gray-100">
-                                        {notifications.length === 0 ? (
-                                            <li className="p-4 text-gray-500">No notifications</li>
-                                        ) : notifications.map((n) => (
-                                            <li key={n.id} className="p-4 hover:bg-gray-50">
-                                                {n.data?.type === 'security_alert' && (
-                                                    <div>
-                                                        <div className="font-semibold text-red-600">Security Alert: Possible Fake Student</div>
-                                                        <div className="text-gray-700 text-sm mt-1">Student: <span className="font-bold">{n.data.name}</span></div>
-                                                        <div className="text-gray-700 text-sm">Grade: {n.data.grade_level}, Section: {n.data.student_section}</div>
-                                                        <div className="text-gray-500 text-xs mt-1">{new Date(n.data.time).toLocaleString()}</div>
-                                                    </div>
-                                                )}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            )}
-                        </div>
+                        <NotificationsDropdown initialNotifications={notifications} adminId={auth?.user?.id} />
                         {/* Logout Button */}
                         <Link
                             href={route('admin.logout')}
@@ -561,61 +499,7 @@ export default function AdminLayout({ children }) {
                 </header>
                 {/* Content */}
                 <main className="flex-1 p-6 overflow-y-auto bg-gray-50">
-                    {/* Debug Panel - Only show in development */}
-                    {debugMode && process.env.NODE_ENV === 'development' && (
-                        <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                            <div className="flex items-center justify-between mb-2">
-                                <h3 className="font-semibold text-yellow-800">Route Debug Info</h3>
-                                <button
-                                    onClick={() => setDebugMode(false)}
-                                    className="text-yellow-600 hover:text-yellow-800"
-                                >
-                                    ×
-                                </button>
-                            </div>
-                            <div className="text-sm text-yellow-700 space-y-1">
-                                <div><strong>Current Path:</strong> {window.location.pathname}</div>
-                                <div><strong>Current Route:</strong> {window.location.pathname}</div>
-                                <div><strong>Navigation Items:</strong></div>
-                                <ul className="ml-4 space-y-1">
-                                    {navigation.map((item) => (
-                                        <li key={item.name} className="text-xs">
-                                            {item.name}: {isActive(item.routeName, item.href) ? '✅ Active' : '❌ Inactive'}
-                                            {item.type === 'group' && item.children && (
-                                                <ul className="ml-4">
-                                                    {item.children.map((child) => (
-                                                        <li key={child.name} className="text-xs">
-                                                            └ {child.name}: {isActive(child.routeName, child.href) ? '✅ Active' : '❌ Inactive'}
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            )}
-                                        </li>
-                                    ))}
-                                </ul>
-                                <div className="mt-4 space-x-2">
-                                    <button
-                                        onClick={() => window.location.href = route('admin.dashboard')}
-                                        className="px-2 py-1 bg-blue-500 text-white rounded text-xs"
-                                    >
-                                        Test Dashboard
-                                    </button>
-                                    <button
-                                        onClick={() => window.location.href = route('admin.students.index')}
-                                        className="px-2 py-1 bg-green-500 text-white rounded text-xs"
-                                    >
-                                        Test Students
-                                    </button>
-                                    <button
-                                        onClick={() => window.location.href = route('admin.users.index')}
-                                        className="px-2 py-1 bg-purple-500 text-white rounded text-xs"
-                                    >
-                                        Test Users
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
+                    {/* Debug panel removed per request */}
                     {children}
                 </main>
             </div>

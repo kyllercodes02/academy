@@ -45,14 +45,7 @@ class GuardianController extends Controller
      */
     public function create()
     {
-        $students = Student::where('status', 'active')
-            ->orderBy('section_id')
-            ->orderBy('name')
-            ->get();
-
-        return Inertia::render('Admin/Guardians/Create', [
-            'students' => $students
-        ]);
+        return Inertia::render('Admin/Guardians/Create');
     }
 
     /**
@@ -69,16 +62,11 @@ class GuardianController extends Controller
             'address' => 'required|string|max:500',
             'emergency_contact_name' => 'required|string|max:255',
             'emergency_contact_number' => 'required|string|max:20',
-            'students' => 'nullable|array',
-            'students.*.id' => 'required_with:students|exists:students,id',
-            'students.*.is_primary' => 'boolean',
-            'students.*.can_pickup' => 'boolean',
         ]);
 
         DB::beginTransaction();
 
         try {
-            // Create User record
             $user = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
@@ -86,14 +74,12 @@ class GuardianController extends Controller
                 'role' => 'guardian',
             ]);
 
-            // Create Guardian record
-            $guardian = Guardian::create([
+            Guardian::create([
                 'user_id' => $user->id,
                 'relationship' => $request->relationship,
                 'contact_number' => $request->contact_number,
             ]);
 
-            // Create GuardianDetails record
             $user->guardianDetails()->create([
                 'contact_number' => $request->contact_number,
                 'relationship' => $request->relationship,
@@ -101,16 +87,6 @@ class GuardianController extends Controller
                 'emergency_contact_name' => $request->emergency_contact_name,
                 'emergency_contact_number' => $request->emergency_contact_number,
             ]);
-
-            // Attach students to the user if any are provided
-            if ($request->has('students') && is_array($request->students)) {
-                foreach ($request->students as $student) {
-                    $user->students()->attach($student['id'], [
-                        'is_primary_guardian' => $student['is_primary'] ?? false,
-                        'can_pickup' => $student['can_pickup'] ?? false,
-                    ]);
-                }
-            }
 
             DB::commit();
 
@@ -131,17 +107,10 @@ class GuardianController extends Controller
             abort(404);
         }
 
-        $guardian->load(['guardianDetails', 'students']);
-        
-        $students = Student::where('status', 'active')
-            ->orderBy('section_id')
-            ->orderBy('name')
-            ->get();
+        $guardian->load(['guardianDetails']);
 
         return Inertia::render('Admin/Guardians/Edit', [
             'guardian' => $guardian,
-            'students' => $students,
-            'linkedStudents' => $guardian->students->pluck('id')->toArray(),
         ]);
     }
 
@@ -163,10 +132,6 @@ class GuardianController extends Controller
             'address' => 'required|string|max:500',
             'emergency_contact_name' => 'required|string|max:255',
             'emergency_contact_number' => 'required|string|max:20',
-            'students' => 'nullable|array',
-            'students.*.id' => 'required_with:students|exists:students,id',
-            'students.*.is_primary' => 'boolean',
-            'students.*.can_pickup' => 'boolean',
         ]);
 
         $guardian->update([
@@ -187,16 +152,6 @@ class GuardianController extends Controller
             'emergency_contact_name' => $request->emergency_contact_name,
             'emergency_contact_number' => $request->emergency_contact_number,
         ]);
-
-        // Sync students with pivot data
-        $syncData = collect($request->students)->mapWithKeys(function ($student) {
-            return [$student['id'] => [
-                'is_primary_guardian' => $student['is_primary'] ?? false,
-                'can_pickup' => $student['can_pickup'] ?? false,
-            ]];
-        })->toArray();
-
-        $guardian->students()->sync($syncData);
 
         return redirect()->route('admin.guardians.index')
             ->with('message', 'Guardian updated successfully.');

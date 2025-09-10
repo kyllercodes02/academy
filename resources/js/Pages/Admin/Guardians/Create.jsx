@@ -7,7 +7,7 @@ import TextInput from '@/Components/TextInput';
 import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
 
-export default function Create({ students }) {
+export default function Create() {
     const { data, setData, post, processing, errors, reset } = useForm({
         name: '',
         email: '',
@@ -18,32 +18,11 @@ export default function Create({ students }) {
         address: '',
         emergency_contact_name: '',
         emergency_contact_number: '',
-        students: [],
     });
 
     const handleSubmit = (e) => {
         e.preventDefault();
         post(route('admin.guardians.store'));
-    };
-
-    const handleStudentChange = (studentId, field, value) => {
-        const updatedStudents = [...data.students];
-        const studentIndex = updatedStudents.findIndex(s => s.id === studentId);
-        
-        if (studentIndex === -1) {
-            updatedStudents.push({
-                id: studentId,
-                is_primary: field === 'is_primary' ? value : false,
-                can_pickup: field === 'can_pickup' ? value : false,
-            });
-        } else {
-            updatedStudents[studentIndex] = {
-                ...updatedStudents[studentIndex],
-                [field]: value,
-            };
-        }
-
-        setData('students', updatedStudents);
     };
 
     return (
@@ -172,48 +151,6 @@ export default function Create({ students }) {
                                         required
                                     />
                                     <InputError message={errors.emergency_contact_number} className="mt-2" />
-                                </div>
-
-                                <div>
-                                    <div className="flex justify-between items-center">
-                                        <InputLabel value="Students (Optional)" />
-                                        <span className="text-sm text-gray-500">You can add students later</span>
-                                    </div>
-                                    <div className="mt-4 space-y-4">
-                                        {students.length > 0 ? (
-                                            students.map(student => (
-                                                <div key={student.id} className="flex items-center space-x-4 p-4 border rounded-lg">
-                                                    <div className="flex-1">
-                                                        <p className="font-medium">{student.name}</p>
-                                                        <p className="text-sm text-gray-500">{student.section?.name || 'No Section'}</p>
-                                                    </div>
-                                                    <div className="flex items-center space-x-4">
-                                                        <label className="flex items-center">
-                                                            <input
-                                                                type="checkbox"
-                                                                className="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                                                                checked={data.students.find(s => s.id === student.id)?.is_primary || false}
-                                                                onChange={e => handleStudentChange(student.id, 'is_primary', e.target.checked)}
-                                                            />
-                                                            <span className="ml-2 text-sm text-gray-600">Primary Guardian</span>
-                                                        </label>
-                                                        <label className="flex items-center">
-                                                            <input
-                                                                type="checkbox"
-                                                                className="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                                                                checked={data.students.find(s => s.id === student.id)?.can_pickup || false}
-                                                                onChange={e => handleStudentChange(student.id, 'can_pickup', e.target.checked)}
-                                                            />
-                                                            <span className="ml-2 text-sm text-gray-600">Can Pickup</span>
-                                                        </label>
-                                                    </div>
-                                                </div>
-                                            ))
-                                        ) : (
-                                            <p className="text-gray-500 text-center py-4">No students available</p>
-                                        )}
-                                    </div>
-                                    <InputError message={errors.students} className="mt-2" />
                                 </div>
 
                                 <div className="flex items-center justify-end mt-4">

@@ -50,12 +50,18 @@ Route::middleware(['auth', 'role:teacher'])->prefix('teacher')->name('teacher.')
     // Attendance
     Route::get('/attendance', [AttendanceController::class, 'index'])
         ->name('attendance.index');
+    Route::get('/attendance/data', [AttendanceController::class, 'getData'])
+        ->name('attendance.data');
     Route::post('/attendance', [AttendanceController::class, 'store'])
         ->name('attendance.store');
-    Route::get('/attendance/export', [AttendanceController::class, 'export'])
-        ->name('attendance.export');
+    Route::post('/attendance/update', [AttendanceController::class, 'update'])
+        ->name('attendance.update');
+    Route::post('/attendance/check-out', [AttendanceController::class, 'recordCheckOut'])
+        ->name('attendance.record-check-out');
     Route::post('/attendance/bulk-update', [AttendanceController::class, 'bulkUpdate'])
         ->name('attendance.bulk-update');
+    Route::get('/attendance/export', [AttendanceController::class, 'export'])
+        ->name('attendance.export');
 
     // SF2 Reports
     Route::get('/sf2', [App\Http\Controllers\Teacher\SF2Controller::class, 'index'])

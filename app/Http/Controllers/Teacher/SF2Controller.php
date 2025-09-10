@@ -7,6 +7,7 @@ use App\Models\Student;
 use App\Models\Section;
 use App\Models\GradeLevel;
 use App\Models\Attendance;
+use App\Models\Setting;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -81,6 +82,12 @@ class SF2Controller extends Controller
             // Calculate summary statistics
             $summary = $this->calculateSummary($students, $month, $year);
 
+            // Get school settings
+            $schoolSettings = [
+                'school_id' => Setting::get('school_id', 'N/A'),
+                'school_name' => Setting::get('school_name', 'ACADEMY SCHOOL'),
+            ];
+
             // Log the data being passed to the template
             \Log::info('SF2 Generation Data:', [
                 'month' => $month,
@@ -102,6 +109,7 @@ class SF2Controller extends Controller
                 'month' => $month,
                 'year' => $year,
                 'summary' => $summary,
+                'schoolSettings' => $schoolSettings,
             ]);
 
             $filename = "SF2_{$section->name}_{$gradeLevel->name}_{$month}_{$year}.pdf";

@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Teacher;
 
 use App\Http\Controllers\Controller;
 use App\Models\Student;
-use App\Models\TeacherSection;
+use App\Models\TeacherAssignment;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -18,15 +18,19 @@ class StudentController extends Controller
     {
         $teacher = auth()->user();
         
-        // Get the teacher's assigned sections
-        $teacherSections = TeacherSection::where('teacher_id', $teacher->id)
-            ->where('academic_year', date('Y') . '-' . (date('Y') + 1))
-            ->get();
+        // Get the teacher's assigned sections using TeacherAssignment
+        $teacherAssignments = TeacherAssignment::where('user_id', $teacher->id)->get();
+
+        if ($teacherAssignments->isEmpty()) {
+            return Inertia::render('Teacher/Students/Index', [
+                'students' => [],
+            ]);
+        }
 
         // Get students from the teacher's sections
-        $students = Student::whereHas('section', function ($query) use ($teacherSections) {
-            $query->whereIn('id', $teacherSections->pluck('section_id'));
-        })->with(['section', 'guardian'])->get();
+        $students = Student::whereIn('section_id', $teacherAssignments->pluck('section_id'))
+            ->with(['section', 'guardian'])
+            ->get();
 
         return Inertia::render('Teacher/Students/Index', [
             'students' => $students,
@@ -41,9 +45,8 @@ class StudentController extends Controller
         $teacher = auth()->user();
         
         // Check if teacher has access to this student's section
-        $hasAccess = TeacherSection::where('teacher_id', $teacher->id)
+        $hasAccess = TeacherAssignment::where('user_id', $teacher->id)
             ->where('section_id', $student->section_id)
-            ->where('academic_year', date('Y') . '-' . (date('Y') + 1))
             ->exists();
 
         if (!$hasAccess) {
@@ -65,9 +68,8 @@ class StudentController extends Controller
         $teacher = auth()->user();
         
         // Check if teacher has access to this student's section
-        $hasAccess = TeacherSection::where('teacher_id', $teacher->id)
+        $hasAccess = TeacherAssignment::where('user_id', $teacher->id)
             ->where('section_id', $student->section_id)
-            ->where('academic_year', date('Y') . '-' . (date('Y') + 1))
             ->exists();
 
         if (!$hasAccess) {
@@ -87,9 +89,8 @@ class StudentController extends Controller
         $teacher = auth()->user();
         
         // Check if teacher has access to this student's section
-        $hasAccess = TeacherSection::where('teacher_id', $teacher->id)
+        $hasAccess = TeacherAssignment::where('user_id', $teacher->id)
             ->where('section_id', $student->section_id)
-            ->where('academic_year', date('Y') . '-' . (date('Y') + 1))
             ->exists();
 
         if (!$hasAccess) {

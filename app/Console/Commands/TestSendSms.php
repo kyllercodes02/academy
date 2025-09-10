@@ -9,7 +9,7 @@ class TestSendSms extends Command
 {
     protected $signature = 'sms:test {to : Destination phone number in E.164 format} {--message=Test message from Zion Academy}';
 
-    protected $description = 'Send a test SMS via Twilio configuration to verify delivery';
+    protected $description = 'Send a test SMS via Semaphore configuration to verify delivery';
 
     public function __construct(private SmsService $smsService)
     {

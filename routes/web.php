@@ -3,6 +3,8 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\WelcomeController;
+use App\Http\Controllers\Admin\NotificationController;
+use App\Events\AlertTriggered;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Broadcast;
 
@@ -51,4 +53,22 @@ Broadcast::routes(['middleware' => ['auth:web,admin']]);
 Route::post('/students/lookup-by-card', [StudentController::class, 'lookupByCard'])
     ->name('students.lookup-by-card');
 
-Route::get('/admin/notifications/fetch', [\App\Http\Controllers\Admin\UserController::class, 'fetchNotifications'])->name('admin.notifications.fetch');
+// Admin Notifications
+Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('admin.notifications.index');
+    Route::get('/notifications/fetch', [NotificationController::class, 'fetch'])->name('admin.notifications.fetch');
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('admin.notifications.read');
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('admin.notifications.read_all');
+});
+
+// Dev route to trigger a test alert
+Route::get('/dev/test-alert', function () {
+    $payload = [
+        'title' => 'Student Alert: John Doe',
+        'message' => 'Possible health issue reported in classroom 3B',
+        'url' => '/admin/alerts/123',
+        'level' => 'critical',
+    ];
+    event(new AlertTriggered($payload));
+    return response()->json(['success' => true, 'message' => 'Alert dispatched']);
+});

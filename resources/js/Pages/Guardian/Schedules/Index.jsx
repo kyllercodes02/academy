@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { Head } from '@inertiajs/react';
+import React, { useState, useEffect } from 'react';
+import { Head, router } from '@inertiajs/react';
 import GuardianLayout from '@/Layouts/GuardianLayout';
+import { RefreshCw } from 'lucide-react';
 
 const daysOfWeek = [
   'Monday',
@@ -14,17 +15,54 @@ const daysOfWeek = [
 
 export default function Index({ children, schedules, message }) {
   const [selectedChildId, setSelectedChildId] = useState(children[0]?.id || '');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastRefreshTime, setLastRefreshTime] = useState(new Date());
 
   const selectedSchedule = selectedChildId && schedules[selectedChildId] ? schedules[selectedChildId].schedules : {};
   const selectedChild = children.find(child => child.id === selectedChildId);
+
+  // Auto-refresh every 10 seconds for better synchronization
+  useEffect(() => {
+    const interval = setInterval(() => {
+      refreshSchedules();
+    }, 10000); // 10 seconds for better real-time feel
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const refreshSchedules = () => {
+    setIsRefreshing(true);
+    router.reload({
+      only: ['schedules'],
+      onFinish: () => {
+        setIsRefreshing(false);
+        setLastRefreshTime(new Date());
+      },
+    });
+  };
 
   return (
     <GuardianLayout>
       <Head title="Class Schedule" />
       <div className="p-6 space-y-6">
         <div className="bg-white rounded-lg shadow p-6">
-          <h1 className="text-2xl font-bold mb-2">Class Schedule</h1>
-          <p className="text-gray-600">View your child's class schedule by section.</p>
+          <div className="flex justify-between items-center mb-4">
+            <div>
+              <h1 className="text-2xl font-bold mb-2">Class Schedule</h1>
+              <p className="text-gray-600">View your child's class schedule by section.</p>
+              <p className="text-xs text-gray-500 mt-1">
+                Last updated: {lastRefreshTime.toLocaleTimeString()}
+              </p>
+            </div>
+            <button
+              onClick={refreshSchedules}
+              disabled={isRefreshing}
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg transition-colors"
+            >
+              <RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} />
+              {isRefreshing ? 'Refreshing...' : 'Refresh Schedules'}
+            </button>
+          </div>
         </div>
         {message && <div className="text-red-600">{message}</div>}
         {children.length > 0 && (

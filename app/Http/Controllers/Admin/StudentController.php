@@ -39,7 +39,17 @@ class StudentController extends Controller
             });
         }
 
-        $students = $query->paginate(15);
+        // Section filter
+        if ($request->filled('section')) {
+            $query->where('section_id', $request->input('section'));
+        }
+
+        // Grade level filter
+        if ($request->filled('grade')) {
+            $query->where('grade_level_id', $request->input('grade'));
+        }
+
+        $students = $query->paginate(15)->appends($request->only(['search', 'section', 'grade']));
         // Add guardian_emails for each student
         $students->getCollection()->transform(function ($student) {
             $student->guardian_emails = $student->guardians->map(function($g) {
@@ -53,11 +63,38 @@ class StudentController extends Controller
 
         return Inertia::render('Admin/StudentManagement', [
             'students' => $students,
-            'sections' => Section::all(),
+            'sections' => Section::with('gradeLevel')->get(),
             'gradeLevels' => GradeLevel::all(),
             'guardians' => $guardians,
-            'search' => $request->search
+            'search' => $request->search,
+            'sectionFilter' => $request->input('section', ''),
+            'gradeFilter' => $request->input('grade', '')
         ]);
+    }
+
+    /**
+     * Display the specified student (JSON response).
+     */
+    public function show(Student $student)
+    {
+        try {
+            $student->load(['section', 'gradeLevel', 'guardians']);
+            // Include guardian emails for parity with index listing
+            $student->guardian_emails = $student->guardians->map(function($g) {
+                return $g->email ?? null;
+            })->filter()->implode(', ');
+
+            return response()->json([
+                'success' => true,
+                'student' => $student,
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Failed to load student: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load student',
+            ], 500);
+        }
     }
 
     /**
@@ -361,62 +398,240 @@ class StudentController extends Controller
     public function uploadCSV(Request $request)
     {
         $request->validate([
-            'section_id' => 'required|exists:sections,id',
-            'csv_file' => 'required|file|mimes:csv,txt|max:2048',
+            'csv_file' => 'required|file|mimes:csv,txt|max:5120',
         ]);
 
         $file = $request->file('csv_file');
-        $csvData = [];
 
-        if (($handle = fopen($file->getPathname(), "r")) !== FALSE) {
-            // Skip header row
-            $header = fgetcsv($handle);
-            while (($data = fgetcsv($handle)) !== FALSE) {
-                // Expecting: name, grade_level, status, card_id (optional)
-                if (count($data) >= 2) { // At least name, grade_level
-                    $csvData[] = [
-                        'name' => trim($data[0]),
-                        'grade_level' => trim($data[1]),
-                        'status' => isset($data[2]) ? strtolower(trim($data[2])) : 'active',
-                        'card_id' => isset($data[3]) ? trim($data[3]) : null,
-                    ];
-                }
-            }
+        $expectedHeaders = [
+            'name',
+            'lrn',
+            'date_of_birth',
+            'gender',
+            'section_id',
+            'grade_level_id',
+            'guardian_ids', // comma-separated user ids (optional)
+            'guardian_emails', // comma-separated emails (optional alternative)
+            'card_id' // optional
+        ];
+
+        $handle = fopen($file->getPathname(), 'r');
+        if ($handle === false) {
+            return response()->json(['message' => 'Unable to read uploaded file.'], 400);
+        }
+
+        $header = fgetcsv($handle);
+        if (!$header) {
             fclose($handle);
+            return response()->json(['message' => 'CSV is empty or invalid.'], 422);
         }
 
-        if (empty($csvData)) {
-            return response()->json([
-                'message' => 'No valid data found in the CSV file.',
-            ], 422);
-        }
+        // Normalize headers
+        $normalizedHeader = array_map(function ($h) {
+            return strtolower(trim($h));
+        }, $header);
 
-        // Validate and import each student
-        foreach ($csvData as $row) {
-            if (empty($row['name']) || empty($row['grade_level'])) {
+        // Ensure required headers exist (match manual add)
+        $required = ['name', 'section_id', 'grade_level_id'];
+        foreach ($required as $req) {
+            if (!in_array($req, $normalizedHeader, true)) {
+                fclose($handle);
                 return response()->json([
-                    'message' => 'Each row must have at least a name and grade_level.'
+                    'message' => "Missing required header: {$req}.",
+                    'expected_headers' => $expectedHeaders,
                 ], 422);
             }
         }
 
-        // Import students into the section
-        foreach ($csvData as $row) {
-            $gradeLevel = GradeLevel::firstOrCreate(['name' => $row['grade_level']]);
-            $student = Student::firstOrNew([
-                'name' => $row['name'],
-                'section_id' => $request->section_id,
-                'grade_level_id' => $gradeLevel->id,
-            ]);
-            $student->status = $row['status'] ?? 'active';
-            if (!empty($row['card_id'])) {
-                $student->card_id = $row['card_id'];
+        $rows = [];
+        while (($data = fgetcsv($handle)) !== false) {
+            if (count($data) === 1 && trim($data[0]) === '') {
+                continue; // skip empty line
             }
-            $student->save();
+            $row = [];
+            foreach ($normalizedHeader as $index => $key) {
+                $row[$key] = isset($data[$index]) ? trim($data[$index]) : null;
+            }
+            $rows[] = $row;
+        }
+        fclose($handle);
+
+        if (count($rows) === 0) {
+            return response()->json(['message' => 'No data rows found in CSV.'], 422);
+        }
+
+        $created = 0;
+        $updated = 0;
+        $errors = [];
+        $processedIds = [];
+
+        foreach ($rows as $lineNumber => $row) {
+            // Build per-row validator using manual creation rules
+            $validator = Validator::make($row, [
+                'name' => 'required|string|max:255',
+                'lrn' => 'nullable|string|max:12', // checked for uniqueness below depending on existing
+                'date_of_birth' => 'nullable|date',
+                'gender' => 'nullable|in:male,female',
+                'section_id' => 'required|exists:sections,id',
+                'grade_level_id' => 'required|exists:grade_levels,id',
+                'guardian_ids' => 'nullable|string',
+                'guardian_emails' => 'nullable|string',
+                'card_id' => 'nullable|string|max:50',
+            ]);
+
+            if ($validator->fails()) {
+                $errors[] = [
+                    'row' => $lineNumber + 2, // +2 accounts for header row and 0-index
+                    'data' => $row,
+                    'messages' => $validator->errors()->all(),
+                ];
+                continue;
+            }
+
+            try {
+                DB::beginTransaction();
+
+                // Upsert target: prefer LRN, else card_id, else name+section+grade
+                $studentQuery = Student::query();
+                if (!empty($row['lrn'])) {
+                    $studentQuery->where('lrn', $row['lrn']);
+                } elseif (!empty($row['card_id'])) {
+                    $studentQuery->where('card_id', $row['card_id']);
+                } else {
+                    $studentQuery->where('name', $row['name'])
+                        ->where('section_id', $row['section_id'])
+                        ->where('grade_level_id', $row['grade_level_id']);
+                }
+
+                $student = $studentQuery->first();
+
+                $payload = [
+                    'name' => $row['name'],
+                    'lrn' => $row['lrn'] ?? null,
+                    'date_of_birth' => $row['date_of_birth'] ?: null,
+                    'gender' => $row['gender'] ?: null,
+                    'section_id' => (int)$row['section_id'],
+                    'grade_level_id' => (int)$row['grade_level_id'],
+                ];
+
+                if (!empty($row['card_id'])) {
+                    // Ensure card_id uniqueness when assigning/ updating
+                    $cardOwner = Student::where('card_id', $row['card_id'])
+                        ->when($student, function($q) use ($student) { $q->where('id', '!=', $student->id); })
+                        ->first();
+                    if ($cardOwner) {
+                        throw new \Exception('card_id already used by another student');
+                    }
+                    $payload['card_id'] = $row['card_id'];
+                }
+
+                if ($student) {
+                    // If LRN changes, ensure uniqueness
+                    if (!empty($payload['lrn'])) {
+                        $lrnOwner = Student::where('lrn', $payload['lrn'])
+                            ->where('id', '!=', $student->id)
+                            ->first();
+                        if ($lrnOwner) {
+                            throw new \Exception('lrn already exists');
+                        }
+                    }
+                    $student->update($payload);
+                    $updated++;
+                } else {
+                    // If creating with LRN, ensure unique
+                    if (!empty($payload['lrn'])) {
+                        $exists = Student::where('lrn', $payload['lrn'])->exists();
+                        if ($exists) {
+                            throw new \Exception('lrn already exists');
+                        }
+                    }
+                    $student = Student::create(array_merge($payload, ['status' => 'active']));
+                    $created++;
+                }
+
+                // Guardians attach via ids or emails
+                $guardianUserIds = [];
+                if (!empty($row['guardian_ids'])) {
+                    $guardianUserIds = collect(explode(',', $row['guardian_ids']))
+                        ->map(function ($id) { return (int)trim($id); })
+                        ->filter()
+                        ->values()
+                        ->all();
+                } elseif (!empty($row['guardian_emails'])) {
+                    $emails = collect(explode(',', $row['guardian_emails']))
+                        ->map(function ($e) { return strtolower(trim($e)); })
+                        ->filter()
+                        ->values();
+                    if ($emails->isNotEmpty()) {
+                        $guardianUserIds = \App\Models\User::whereIn('email', $emails)
+                            ->where('role', 'guardian')
+                            ->pluck('id')
+                            ->all();
+                    }
+                }
+                if (!empty($guardianUserIds)) {
+                    $student->guardians()->sync($guardianUserIds);
+                }
+
+                DB::commit();
+                $processedIds[] = $student->id;
+            } catch (\Throwable $e) {
+                DB::rollBack();
+                $errors[] = [
+                    'row' => $lineNumber + 2,
+                    'data' => $row,
+                    'messages' => [$e->getMessage()],
+                ];
+            }
         }
 
         return response()->json([
-            'message' => 'Students imported successfully from CSV.'
+            'message' => 'CSV processed',
+            'created' => $created,
+            'updated' => $updated,
+            'errors' => $errors,
+            'processed_ids' => $processedIds,
         ]);
+    }
+
+    /**
+     * Download a CSV template with correct headers for student import.
+     */
+    public function downloadCsvTemplate()
+    {
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="student_import_template.csv"',
+            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+            'Pragma' => 'no-cache',
+        ];
+
+        $callback = function () {
+            $output = fopen('php://output', 'w');
+            fputcsv($output, [
+                'name',
+                'lrn',
+                'date_of_birth',
+                'gender',
+                'section_id',
+                'grade_level_id',
+                'guardian_emails',
+                'card_id'
+            ]);
+            // Example row
+            fputcsv($output, [
+                'Juan Dela Cruz',
+                '123456789012',
+                '2012-05-01',
+                'male',
+                '1',
+                '1',
+                'parent1@example.com,parent2@example.com',
+                ''
+            ]);
+            fclose($output);
+        };
+
+        return response()->streamDownload($callback, 'student_import_template.csv', $headers);
     }
 }

@@ -28,7 +28,8 @@ export default function UserManagement({ auth, users, search }) {
         email: '',
         password: '',
         password_confirmation: '',
-        role: 'teacher',
+        // Fixed to admin for this section
+        role: 'admin',
         search: search || '',
     });
 
@@ -44,7 +45,8 @@ export default function UserManagement({ auth, users, search }) {
             email: user.email,
             password: '',
             password_confirmation: '',
-            role: user.role,
+            // Keep admin-only management
+            role: 'admin',
             search: data.search,
         });
     };
@@ -187,19 +189,16 @@ export default function UserManagement({ auth, users, search }) {
                         <InputError message={errors.email} className="mt-2" />
                     </div>
 
+                    {/* Role is fixed to Admin in this section */}
                     <div className="mt-6">
                         <InputLabel htmlFor="role" value="Role" />
-                        <SelectInput
+                        <TextInput
                             id="role"
-                            className="mt-1 block w-full"
+                            type="text"
+                            className="mt-1 block w-full bg-gray-50"
                             value={data.role}
-                            onChange={(e) => setData('role', e.target.value)}
-                            required
-                        >
-                            <option value="teacher">Teacher</option>
-                            <option value="admin">Admin</option>
-                        </SelectInput>
-                        <InputError message={errors.role} className="mt-2" />
+                            readOnly
+                        />
                     </div>
 
                     <div className="mt-6">

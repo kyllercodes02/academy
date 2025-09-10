@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Announcement;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Events\NewAnnouncementCreated;
@@ -37,11 +38,19 @@ class AnnouncementController extends Controller
             'expires_at' => 'nullable|date|after_or_equal:publish_at',
         ]);
 
-        $user = Auth::user();
+        $admin = Auth::guard('admin')->user();
         
-        if (!$user || $user->role !== 'admin') {
+        if (!$admin) {
             return redirect()->route('login')
                 ->with('error', 'Unauthorized access.');
+        }
+        
+        // Find the corresponding user with admin role
+        $user = User::where('email', $admin->email)->where('role', 'admin')->first();
+        
+        if (!$user) {
+            return redirect()->route('admin.announcements.index')
+                ->with('error', 'Admin user not found.');
         }
         
         $announcement = Announcement::create([

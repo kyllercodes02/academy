@@ -2,14 +2,14 @@ import React, { useState, useEffect, useContext } from 'react';
 import { Head, useForm, usePage, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { debounce } from 'lodash';
-import { CreditCard, Search, UserPlus, Edit, Trash, AlertCircle, X, User, Camera, Upload } from 'lucide-react';
+import { CreditCard, Search, UserPlus, Edit, Trash, AlertCircle, X, User, Camera, Upload, ChevronDown } from 'lucide-react';
 import axios from 'axios';
 import { Dialog } from '@headlessui/react';
 import { toast } from 'react-hot-toast';
 
 export default function StudentManagement({ students, sections, gradeLevels, guardians }) {
     const page = usePage();
-    const { search } = page.props;
+    const { search, sectionFilter = '', gradeFilter = '' } = page.props;
     const [searchQuery, setSearchQuery] = useState(search || '');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isEdit, setIsEdit] = useState(false);
@@ -23,6 +23,8 @@ export default function StudentManagement({ students, sections, gradeLevels, gua
     const [previewUrl, setPreviewUrl] = useState(null);
     const [selectedGuardians, setSelectedGuardians] = useState([]);
     const [photoPreview, setPhotoPreview] = useState(null);
+    const [guardianSearchQuery, setGuardianSearchQuery] = useState('');
+    const [isGuardianDropdownOpen, setIsGuardianDropdownOpen] = useState(false);
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
     const [importFile, setImportFile] = useState(null);
     const [importError, setImportError] = useState('');
@@ -33,6 +35,7 @@ export default function StudentManagement({ students, sections, gradeLevels, gua
     const [csvFile, setCsvFile] = useState(null);
     const [csvError, setCsvError] = useState('');
     const [csvSuccess, setCsvSuccess] = useState('');
+    const [csvReport, setCsvReport] = useState(null);
     const [csvLoading, setCsvLoading] = useState(false);
 
     const { data, setData, post, put, delete: destroy, processing, errors, reset, clearErrors } = useForm({
@@ -51,13 +54,66 @@ export default function StudentManagement({ students, sections, gradeLevels, gua
         card_id: '',
     });
 
-    const debouncedSearch = debounce((query) => {
-        router.get(route('admin.students.index'), { search: query }, { preserveState: true, preserveScroll: true });
+    const [selectedSectionFilter, setSelectedSectionFilter] = useState(sectionFilter || '');
+    const [selectedGradeFilter, setSelectedGradeFilter] = useState(gradeFilter || '');
+    const [filteredSections, setFilteredSections] = useState(sections);
+
+    // Initialize filtered sections based on grade filter
+    useEffect(() => {
+        if (selectedGradeFilter) {
+            const gradeSections = sections.filter(section => section.grade_level_id == selectedGradeFilter);
+            setFilteredSections(gradeSections);
+        } else {
+            setFilteredSections(sections);
+        }
+    }, [selectedGradeFilter, sections]);
+
+    // Close guardian dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (isGuardianDropdownOpen && !event.target.closest('.guardian-dropdown')) {
+                setIsGuardianDropdownOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [isGuardianDropdownOpen]);
+
+    const debouncedSearch = debounce((query, sectionId, gradeId) => {
+        router.get(route('admin.students.index'), { search: query, section: sectionId, grade: gradeId }, { preserveState: true, preserveScroll: true });
     }, 500);
 
     const handleSearchChange = (e) => {
         setSearchQuery(e.target.value);
-        debouncedSearch(e.target.value);
+        debouncedSearch(e.target.value, selectedSectionFilter, selectedGradeFilter);
+    };
+
+    const handleSectionFilterChange = (e) => {
+        const newSection = e.target.value;
+        setSelectedSectionFilter(newSection);
+        debouncedSearch(searchQuery, newSection, selectedGradeFilter);
+    };
+
+    const handleGradeFilterChange = (e) => {
+        const newGrade = e.target.value;
+        setSelectedGradeFilter(newGrade);
+        
+        // Filter sections based on selected grade
+        if (newGrade) {
+            const gradeSections = sections.filter(section => section.grade_level_id == newGrade);
+            setFilteredSections(gradeSections);
+            // Reset section filter if it's not valid for the new grade
+            if (selectedSectionFilter && !gradeSections.find(s => s.id == selectedSectionFilter)) {
+                setSelectedSectionFilter('');
+            }
+        } else {
+            setFilteredSections(sections);
+        }
+        
+        debouncedSearch(searchQuery, selectedSectionFilter, newGrade);
     };
 
     const openModal = (student = null) => {
@@ -95,6 +151,8 @@ export default function StudentManagement({ students, sections, gradeLevels, gua
             setPhotoPreview(null);
             setEditingStudent(null);
         }
+        setGuardianSearchQuery('');
+        setIsGuardianDropdownOpen(false);
         setIsModalOpen(true);
         setTimeout(() => {
             const fileInput = document.getElementById('photo');
@@ -238,6 +296,44 @@ export default function StudentManagement({ students, sections, gradeLevels, gua
         }));
         setSelectedGuardians(selectedOptions);
         setData('guardian_ids', selectedOptions.map(g => g.id).filter(id => !!id));
+    };
+
+    const handleGuardianSelect = (guardian) => {
+        const guardianData = {
+            id: guardian.user.id,
+            email: guardian.user.email,
+            name: guardian.user.name
+        };
+        
+        // Check if guardian is already selected
+        if (!selectedGuardians.find(g => g.id === guardianData.id)) {
+            const newSelectedGuardians = [...selectedGuardians, guardianData];
+            setSelectedGuardians(newSelectedGuardians);
+            setData('guardian_ids', newSelectedGuardians.map(g => g.id));
+        }
+        
+        setGuardianSearchQuery('');
+        setIsGuardianDropdownOpen(false);
+    };
+
+    const handleGuardianRemove = (guardianId) => {
+        const newSelectedGuardians = selectedGuardians.filter(g => g.id !== guardianId);
+        setSelectedGuardians(newSelectedGuardians);
+        setData('guardian_ids', newSelectedGuardians.map(g => g.id));
+    };
+
+    const filteredGuardians = guardians.filter(guardian => {
+        const searchLower = guardianSearchQuery.toLowerCase();
+        const nameMatch = guardian.user.name.toLowerCase().includes(searchLower);
+        const emailMatch = guardian.user.email.toLowerCase().includes(searchLower);
+        const isAlreadySelected = selectedGuardians.find(g => g.id === guardian.user.id);
+        
+        return (nameMatch || emailMatch) && !isAlreadySelected;
+    });
+
+    const getSectionLabel = (name = '') => {
+        const match = String(name).match(/([A-E])$/i);
+        return match ? match[1].toUpperCase() : name;
     };
 
     const handleImportFileChange = (e) => {
@@ -428,6 +524,8 @@ export default function StudentManagement({ students, sections, gradeLevels, gua
         reset();
         setSelectedGuardians([]);
         setPhotoPreview(null);
+        setGuardianSearchQuery('');
+        setIsGuardianDropdownOpen(false);
         clearErrors();
     };
 
@@ -456,6 +554,32 @@ export default function StudentManagement({ students, sections, gradeLevels, gua
                         </svg>
                     </div>
                 </div>
+                {/* Grade Filter */}
+                <div>
+                    <select
+                        value={selectedGradeFilter}
+                        onChange={handleGradeFilterChange}
+                        className="border border-gray-300 p-2 rounded"
+                    >
+                        <option value="">All Grades</option>
+                        {gradeLevels.map(grade => (
+                            <option key={grade.id} value={grade.id}>{grade.name}</option>
+                        ))}
+                    </select>
+                </div>
+                {/* Section Filter */}
+                <div>
+                    <select
+                        value={selectedSectionFilter}
+                        onChange={handleSectionFilterChange}
+                        className="border border-gray-300 p-2 rounded"
+                    >
+                        <option value="">All Sections</option>
+                        {filteredSections.map(section => (
+                            <option key={section.id} value={section.id}>{section.name}</option>
+                        ))}
+                    </select>
+                </div>
                 <button 
                     onClick={() => openModal()} 
                     className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded flex items-center"
@@ -472,25 +596,24 @@ export default function StudentManagement({ students, sections, gradeLevels, gua
                     <Upload className="w-4 h-4 mr-2" />
                     {showCSVUpload ? 'Hide CSV Upload' : 'Import Students (CSV)'}
                 </button>
+                <a
+                    href={route('admin.students.csv-template')}
+                    className="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    download
+                >
+                    Download CSV Template
+                </a>
             </div>
 
             {/* CSV Upload Form */}
             {showCSVUpload && (
                 <div className="bg-gray-50 p-4 rounded-lg mb-6">
-                    <h3 className="text-lg font-semibold mb-4">Upload CSV File by Section</h3>
+                    <h3 className="text-lg font-semibold mb-4">Upload CSV File</h3>
                     <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Section</label>
-                        <select
-                            value={selectedSection}
-                            onChange={e => setSelectedSection(e.target.value)}
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 mb-2"
-                        >
-                            {sections.map(section => (
-                                <option key={section.id} value={section.id}>{section.name}</option>
-                            ))}
-                        </select>
-                        <p className="text-sm text-gray-600 mb-2">CSV format: Name, Grade Level, Card ID (optional)</p>
-                        <p className="text-sm text-gray-500">Example: John Doe, Grade 10, 123456</p>
+                        <p className="text-sm text-gray-600 mb-2">CSV columns: name, lrn, date_of_birth (YYYY-MM-DD), gender, section_id, grade_level_id, guardian_emails (optional), card_id (optional)</p>
+                        <p className="text-sm text-gray-500">Use the template for correct headers.</p>
                     </div>
                     <form onSubmit={async (e) => {
                         e.preventDefault();
@@ -502,18 +625,20 @@ export default function StudentManagement({ students, sections, gradeLevels, gua
                         }
                         setCsvLoading(true);
                         const formData = new FormData();
-                        formData.append('section_id', selectedSection);
                         formData.append('csv_file', csvFile);
                         try {
-                            await axios.post(route('admin.students.upload-csv'), formData, {
+                            const resp = await axios.post(route('admin.students.upload-csv'), formData, {
                                 headers: { 'Content-Type': 'multipart/form-data' },
                             });
-                            setCsvSuccess('Students imported successfully from CSV.');
+                            const data = resp?.data || {};
+                            setCsvReport(data);
+                            setCsvSuccess(`Processed: created ${data.created || 0}, updated ${data.updated || 0}${(data.errors?.length||0)>0 ? `, errors ${data.errors.length}`: ''}`);
                             setCsvFile(null);
-                            setShowCSVUpload(false);
-                            window.location.reload();
+                            // Refresh list via Inertia without full reload
+                            router.get(route('admin.students.index'), {}, { preserveScroll: true, preserveState: true, replace: true });
                         } catch (e) {
-                            setCsvError(e.response?.data?.message || 'Failed to upload CSV.');
+                            const errs = e.response?.data?.errors || e.response?.data?.message || 'Failed to upload CSV.';
+                            setCsvError(typeof errs === 'string' ? errs : JSON.stringify(errs));
                         } finally {
                             setCsvLoading(false);
                         }
@@ -527,8 +652,12 @@ export default function StudentManagement({ students, sections, gradeLevels, gua
                                 required
                             />
                         </div>
+                        {csvSuccess && (
+                            <div className="bg-green-50 border border-green-200 rounded p-3 mb-3 text-green-800">
+                                {csvSuccess}
+                            </div>
+                        )}
                         {csvError && <div className="text-red-600 mb-4">{csvError}</div>}
-                        {csvSuccess && <div className="text-green-600 mb-4">{csvSuccess}</div>}
                         <button
                             type="submit"
                             className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
@@ -537,6 +666,35 @@ export default function StudentManagement({ students, sections, gradeLevels, gua
                             {csvLoading ? 'Uploading...' : 'Upload CSV'}
                         </button>
                     </form>
+                    {csvReport?.errors && csvReport.errors.length > 0 && (
+                        <div className="mt-4">
+                            <h4 className="font-semibold mb-2">Rows with errors ({csvReport.errors.length}):</h4>
+                            <div className="max-h-64 overflow-auto border rounded">
+                                <table className="min-w-full text-sm">
+                                    <thead className="bg-gray-100">
+                                        <tr>
+                                            <th className="text-left p-2">Row</th>
+                                            <th className="text-left p-2">Messages</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {csvReport.errors.map((err, idx) => (
+                                            <tr key={idx} className="border-t">
+                                                <td className="p-2">{err.row}</td>
+                                                <td className="p-2">
+                                                    <ul className="list-disc ml-5">
+                                                        {(err.messages || []).map((m, i) => (
+                                                            <li key={i}>{m}</li>
+                                                        ))}
+                                                    </ul>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -585,26 +743,40 @@ export default function StudentManagement({ students, sections, gradeLevels, gua
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                         <div className="flex items-center space-x-4">
-                                            <button onClick={() => openModal(student)} className="text-blue-600 hover:text-blue-900">Edit</button>
-                                            {student.card_id ? (
-                                                <button 
-                                                    onClick={() => handleUnregisterCard(student)}
-                                                    className="text-red-600 hover:text-red-900"
-                                                >
-                                                    Unregister Card
-                                                </button>
-                                            ) : (
-                                                <button
-                                                    onClick={() => {
+                                            {/* Edit */}
+                                            <button
+                                                onClick={() => openModal(student)}
+                                                title="Edit"
+                                                aria-label={`Edit ${student.name}`}
+                                                className="text-blue-600 hover:text-blue-800"
+                                            >
+                                                <Edit className="h-5 w-5" />
+                                            </button>
+                                            {/* Card status: green when registered, red when unregistered */}
+                                            <button
+                                                onClick={() => {
+                                                    if (student.card_id) {
+                                                        handleUnregisterCard(student);
+                                                    } else {
                                                         setSelectedStudentForCard(student);
                                                         setIsManualCardModalOpen(true);
-                                                    }}
-                                                    className="text-green-600 hover:text-green-900"
-                                                >
-                                                    Register Card
-                                                </button>
-                                            )}
-                                            <button onClick={() => handleDelete(student.id)} className="text-red-600 hover:text-red-900">Delete</button>
+                                                    }
+                                                }}
+                                                title={student.card_id ? 'Unregister Card' : 'Register Card'}
+                                                aria-label={`${student.card_id ? 'Unregister' : 'Register'} card for ${student.name}`}
+                                                className={`${student.card_id ? 'text-green-600 hover:text-green-800' : 'text-red-600 hover:text-red-800'}`}
+                                            >
+                                                <CreditCard className="h-5 w-5" />
+                                            </button>
+                                            {/* Delete */}
+                                            <button
+                                                onClick={() => handleDelete(student.id)}
+                                                title="Delete"
+                                                aria-label={`Delete ${student.name}`}
+                                                className="text-red-600 hover:text-red-800"
+                                            >
+                                                <Trash className="h-5 w-5" />
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -833,7 +1005,7 @@ export default function StudentManagement({ students, sections, gradeLevels, gua
                                                     <option value="">Select Section</option>
                                                     {sections.map(section => (
                                                         <option key={section.id} value={section.id}>
-                                                            {section.name}
+                                                            {getSectionLabel(section.name)}
                                                         </option>
                                                     ))}
                                                 </select>
@@ -874,25 +1046,56 @@ export default function StudentManagement({ students, sections, gradeLevels, gua
 
                                             {/* Guardians */}
                                             <div className="md:col-span-2">
-                                                <label htmlFor="guardian_ids" className="block text-sm font-semibold text-gray-700 mb-2">
+                                                <label htmlFor="guardian_search" className="block text-sm font-semibold text-gray-700 mb-2">
                                                     Guardians
                                                 </label>
-                                                <select
-                                                    id="guardian_ids"
-                                                    multiple
-                                                    value={data.guardian_ids}
-                                                    onChange={handleGuardianChange}
-                                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
-                                                    size="4"
-                                                >
-                                                    {guardians.map(guardian => (
-                                                        <option key={guardian.id} value={guardian.user.id}>
-                                                            {guardian.user.email}
-                                                        </option>
-                                                    ))}
-                                                </select>
+                                                
+                                                {/* Searchable Guardian Dropdown */}
+                                                <div className="relative guardian-dropdown">
+                                                    <div className="relative">
+                                                        <input
+                                                            type="text"
+                                                            id="guardian_search"
+                                                            value={guardianSearchQuery}
+                                                            onChange={(e) => {
+                                                                setGuardianSearchQuery(e.target.value);
+                                                                setIsGuardianDropdownOpen(true);
+                                                            }}
+                                                            onFocus={() => setIsGuardianDropdownOpen(true)}
+                                                            placeholder="Search guardians by name or email..."
+                                                            className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
+                                                        />
+                                                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                                            <ChevronDown className="h-5 w-5 text-gray-400" />
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    {/* Dropdown Options */}
+                                                    {isGuardianDropdownOpen && (
+                                                        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto">
+                                                            {filteredGuardians.length > 0 ? (
+                                                                filteredGuardians.map(guardian => (
+                                                                    <div
+                                                                        key={guardian.id}
+                                                                        onClick={() => handleGuardianSelect(guardian)}
+                                                                        className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                                                                    >
+                                                                        <div className="font-medium text-gray-900">{guardian.user.name}</div>
+                                                                        <div className="text-sm text-gray-500">{guardian.user.email}</div>
+                                                                    </div>
+                                                                ))
+                                                            ) : (
+                                                                <div className="px-4 py-3 text-gray-500 text-center">
+                                                                    {guardianSearchQuery ? 'No guardians found' : 'Start typing to search guardians'}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                
+                                                {/* Selected Guardians */}
                                                 {selectedGuardians.length > 0 && (
-                                                    <div className="mt-2">
+                                                    <div className="mt-3">
                                                         <p className="text-sm text-gray-600 mb-2">Selected Guardians:</p>
                                                         <div className="flex flex-wrap gap-2">
                                                             {selectedGuardians.map(guardian => (
@@ -900,12 +1103,20 @@ export default function StudentManagement({ students, sections, gradeLevels, gua
                                                                     key={guardian.id}
                                                                     className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
                                                                 >
-                                                                    {guardian.email}
+                                                                    {guardian.name || guardian.email}
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => handleGuardianRemove(guardian.id)}
+                                                                        className="ml-2 text-blue-600 hover:text-blue-800"
+                                                                    >
+                                                                        <X className="h-3 w-3" />
+                                                                    </button>
                                                                 </span>
                                                             ))}
                                                         </div>
                                                     </div>
                                                 )}
+                                                
                                                 {errors.guardian_ids && (
                                                     <p className="mt-2 text-sm text-red-600 flex items-center">
                                                         <AlertCircle className="h-4 w-4 mr-1" />
@@ -913,7 +1124,7 @@ export default function StudentManagement({ students, sections, gradeLevels, gua
                                                     </p>
                                                 )}
                                                 <p className="mt-2 text-xs text-gray-500">
-                                                    Hold Ctrl (Cmd on Mac) to select multiple guardians
+                                                    Type to search and select guardians
                                                 </p>
                                             </div>
                                         </div>

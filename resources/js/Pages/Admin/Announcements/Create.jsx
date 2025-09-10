@@ -18,7 +18,15 @@ export default function Create() {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        post(route('admin.announcements.store'));
+        post(route('admin.announcements.store'), {
+            onSuccess: () => {
+                // Success handling
+                console.log('Announcement created successfully');
+            },
+            onError: (errors) => {
+                console.error('Form errors:', errors);
+            }
+        });
     };
 
     return (
@@ -61,16 +69,16 @@ export default function Create() {
 
                             <div>
                                 <InputLabel htmlFor="priority" value="Priority" />
-                                <select
+                                <SelectInput
                                     id="priority"
-                                    className="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+                                    className="mt-1 block w-full"
                                     value={data.priority}
                                     onChange={e => setData('priority', e.target.value)}
                                 >
                                     <option value="low">Low</option>
                                     <option value="medium">Medium</option>
                                     <option value="high">High</option>
-                                </select>
+                                </SelectInput>
                                 <InputError message={errors.priority} className="mt-2" />
                             </div>
 

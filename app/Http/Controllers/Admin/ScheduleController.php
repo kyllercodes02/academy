@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Schedule;
 use App\Models\Section;
+use App\Events\ScheduleCreated;
+use App\Events\ScheduleUpdated;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -16,9 +18,11 @@ class ScheduleController extends Controller
     public function index()
     {
         $sections = Section::with('gradeLevel')->orderBy('name')->get();
+        $gradeLevels = \App\Models\GradeLevel::orderBy('level')->get();
         
         return Inertia::render('Admin/Schedules/Index', [
             'sections' => $sections,
+            'gradeLevels' => $gradeLevels,
         ]);
     }
 
@@ -70,6 +74,9 @@ class ScheduleController extends Controller
 
         $schedule = Schedule::create($request->all());
 
+        // Dispatch event for real-time updates
+        event(new ScheduleCreated($schedule));
+
         return response()->json([
             'message' => 'Schedule created successfully.',
             'schedule' => $schedule,
@@ -105,6 +112,9 @@ class ScheduleController extends Controller
         }
 
         $schedule->update($request->all());
+
+        // Dispatch event for real-time updates
+        event(new ScheduleUpdated($schedule));
 
         return response()->json([
             'message' => 'Schedule updated successfully.',
@@ -156,6 +166,11 @@ class ScheduleController extends Controller
         }
 
         $schedules = Schedule::bulkCreateForSection($request->section_id, $request->schedules);
+
+        // Dispatch events for each created schedule
+        foreach ($schedules as $schedule) {
+            event(new ScheduleCreated($schedule));
+        }
 
         return response()->json([
             'message' => 'Schedules created successfully.',

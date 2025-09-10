@@ -11,13 +11,20 @@ const pusherCluster = import.meta.env.VITE_PUSHER_APP_CLUSTER;
 
 if (pusherKey && pusherCluster) {
     window.Pusher = Pusher;
-    
+
+    // Try to grab CSRF token from meta tags if available
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
     window.Echo = new Echo({
         broadcaster: 'pusher',
         key: pusherKey,
         cluster: pusherCluster,
         forceTLS: true,
-        withCredentials: true
+        withCredentials: true,
+        authEndpoint: '/broadcasting/auth',
+        auth: {
+            headers: csrfToken ? { 'X-CSRF-TOKEN': csrfToken } : {}
+        }
     });
 } else {
     console.warn('Pusher configuration is missing. Real-time updates will not be available.');

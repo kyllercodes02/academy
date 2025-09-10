@@ -23,69 +23,226 @@ class AttendanceController extends Controller
             ]);
         }
 
-        $date = $request->input('date', now()->toDateString());
+        $date = $request->get('date', now()->format('Y-m-d'));
         $sectionId = $teacherAssignment->section_id;
+        
+        // Query builder for students
+        $query = Student::query()
+            ->with(['attendances' => function($query) use ($date) {
+                $query->whereDate('date', $date);
+            }, 'section'])
+            ->where('status', 'active')
+            ->where('section_id', $sectionId);
 
-        $query = Student::with(['section', 'gradeLevel', 'todayAttendance' => function ($query) use ($date) {
-            $query->whereDate('date', $date);
-        }])->where('section_id', $sectionId);
+        $students = $query->orderBy('name')->get();
 
-        // Add search filter
-        if ($request->filled('search')) {
-            $query->where('name', 'like', '%' . $request->search . '%');
-        }
-
-        $students = $query->orderBy('name')->get()->map(function ($student) {
-            $attendance = $student->todayAttendance;
+        // Transform data for Inertia
+        $studentsData = $students->map(function ($student) use ($date) {
+            $attendance = $student->attendances->first();
             return [
                 'id' => $student->id,
-                'student_id' => $student->id, // Use student ID as student_id
-                'first_name' => $student->name, // Use name as first_name
-                'last_name' => '', // Empty last_name since we only have name
-                'card_id' => $student->card_id,
-                'section' => $student->section ? $student->section->name : null,
-                'grade_level' => $student->gradeLevel ? $student->gradeLevel->name : null,
-                'status' => $attendance ? $attendance->status : 'absent',
-                'check_in' => $attendance ? Carbon::parse($attendance->check_in_time)->format('g:i A') : 'N/A',
+                'name' => $student->name,
+                'section' => $student->section?->name,
+                'attendance' => [
+                    'status' => $attendance ? $attendance->status : 'absent',
+                    'check_in_time' => $attendance ? $attendance->check_in_time : null,
+                    'check_out_time' => $attendance ? $attendance->check_out_time : null,
+                    'remarks' => $attendance ? $attendance->remarks : null,
+                ],
             ];
         });
 
         return Inertia::render('Teacher/Attendance/Index', [
-            'students' => [
-                'data' => $students,
-                'current_page' => 1,
-                'last_page' => 1,
-                'per_page' => $students->count(),
-                'total' => $students->count(),
-            ],
-            'sections' => [$teacherAssignment->section->name],
-            'filters' => $request->only(['search', 'section']),
-            'date' => $date,
+            'students' => $studentsData,
+            'currentDate' => $date,
+            'filters' => $request->all('search', 'date'),
         ]);
     }
 
+    /**
+     * Get attendance data for AJAX requests
+     */
+    public function getData(Request $request)
+    {
+        $teacher = Auth::user();
+        $teacherAssignment = $teacher->teacherAssignments()->with(['section', 'gradeLevel'])->first();
+
+        if (!$teacherAssignment) {
+            return response()->json(['error' => 'No section assigned'], 400);
+        }
+
+        $date = $request->get('date', now()->format('Y-m-d'));
+        $sectionId = $teacherAssignment->section_id;
+        
+        $query = Student::query()
+            ->with(['attendances' => function($query) use ($date) {
+                $query->whereDate('date', $date);
+            }, 'section'])
+            ->where('status', 'active')
+            ->where('section_id', $sectionId);
+
+        if ($request->has('search')) {
+            $search = $request->get('search');
+            $query->where('name', 'like', "%{$search}%");
+        }
+
+        $students = $query->orderBy('name')->get();
+
+        $studentsData = $students->map(function ($student) {
+            $attendance = $student->attendances->first();
+            return [
+                'id' => $student->id,
+                'name' => $student->name,
+                'section' => $student->section?->name,
+                'attendance' => [
+                    'status' => $attendance ? $attendance->status : 'absent',
+                    'check_in_time' => $attendance ? $attendance->check_in_time : null,
+                    'check_out_time' => $attendance ? $attendance->check_out_time : null,
+                    'remarks' => $attendance ? $attendance->remarks : null,
+                ],
+            ];
+        });
+
+        return response()->json([
+            'students' => $studentsData,
+            'currentDate' => $date,
+            'filters' => $request->all('search', 'date'),
+        ]);
+    }
+
+    /**
+     * Store or update attendance records
+     */
     public function store(Request $request)
+    {
+        $request->validate([
+            'date' => 'required|date',
+            'students' => 'required|array',
+            'students.*.id' => 'required|exists:students,id',
+            'students.*.status' => 'required|in:present,absent,late',
+            'students.*.remarks' => 'nullable|string',
+        ]);
+
+        $date = $request->date;
+        $currentTime = Carbon::now();
+
+        foreach ($request->students as $studentData) {
+            $attendance = Attendance::updateOrCreate(
+                [
+                    'student_id' => $studentData['id'],
+                    'date' => $date,
+                ],
+                [
+                    'status' => $studentData['status'],
+                    'remarks' => $studentData['remarks'] ?? null,
+                    'check_in_time' => $studentData['status'] !== 'absent' ? $currentTime->format('H:i:s') : null,
+                ]
+            );
+
+            event(new \App\Events\AttendanceUpdated(
+                $studentData['id'],
+                $attendance->status,
+                $attendance->check_in_time,
+                $attendance->check_out_time,
+                $attendance->remarks
+            ));
+        }
+
+        return back()->with('success', 'Attendance records updated successfully.');
+    }
+
+    /**
+     * Update a single attendance record
+     */
+    public function update(Request $request)
     {
         $request->validate([
             'student_id' => 'required|exists:students,id',
             'date' => 'required|date',
             'status' => 'required|in:present,absent,late',
+            'remarks' => 'nullable|string',
+            'check_out' => 'nullable|boolean',
         ]);
+
+        $currentTime = Carbon::now();
+        $updateData = [
+            'status' => $request->status,
+            'remarks' => $request->remarks,
+        ];
+
+        // Handle check-in
+        if ($request->status !== 'absent' && !$request->check_out) {
+            $updateData['check_in_time'] = $currentTime->format('H:i:s');
+        }
+
+        // Handle check-out
+        if ($request->check_out) {
+            $updateData['check_out_time'] = $currentTime->format('H:i:s');
+        }
 
         $attendance = Attendance::updateOrCreate(
             [
                 'student_id' => $request->student_id,
                 'date' => $request->date,
             ],
-            [
-                'status' => $request->status,
-                'check_in_time' => $request->status === 'present' || $request->status === 'late' ? now()->format('H:i:s') : null,
-            ]
+            $updateData
         );
 
-        return response()->json(['message' => 'Attendance recorded successfully', 'attendance' => $attendance]);
+        // Broadcast and dispatch the attendance update
+        $event = new \App\Events\AttendanceUpdated(
+            $request->student_id,
+            $attendance->status,
+            $attendance->check_in_time,
+            $attendance->check_out_time,
+            $attendance->remarks
+        );
+        broadcast($event)->toOthers();
+        event($event);
+
+        return back()->with('success', 'Attendance record updated successfully.');
     }
 
+    /**
+     * Record student check-out
+     */
+    public function recordCheckOut(Request $request)
+    {
+        $request->validate([
+            'student_id' => 'required|exists:students,id',
+            'date' => 'required|date',
+            'student_number' => 'required|string',
+        ]);
+
+        $student = Student::findOrFail($request->student_id);
+        
+        $attendance = Attendance::where('student_id', $request->student_id)
+            ->whereDate('date', $request->date)
+            ->first();
+
+        if (!$attendance) {
+            return back()->withErrors(['message' => 'No attendance record found for this student.']);
+        }
+
+        $attendance->check_out_time = now()->format('H:i:s');
+        $attendance->save();
+
+        // Broadcast and dispatch the attendance update
+        $event = new \App\Events\AttendanceUpdated(
+            $request->student_id,
+            $attendance->status,
+            $attendance->check_in_time,
+            $attendance->check_out_time,
+            $attendance->remarks
+        );
+        broadcast($event)->toOthers();
+        event($event);
+
+        return back()->with('success', 'Check-out recorded successfully.');
+    }
+
+    /**
+     * Bulk update attendance records
+     */
     public function bulkUpdate(Request $request)
     {
         $request->validate([
@@ -95,24 +252,38 @@ class AttendanceController extends Controller
 
         $teacher = Auth::user();
         $teacherAssignment = $teacher->teacherAssignments()->first();
+        
         if (!$teacherAssignment) {
             return response()->json(['message' => 'No section assigned.'], 400);
         }
+        
         $sectionId = $teacherAssignment->section_id;
-        $students = Student::where('section_id', $sectionId)->get();
+        $query = Student::query()->where('status', 'active')->where('section_id', $sectionId);
+        $students = $query->get();
+        $currentTime = Carbon::now();
+
         foreach ($students as $student) {
-            Attendance::updateOrCreate(
+            $attendance = Attendance::updateOrCreate(
                 [
                     'student_id' => $student->id,
                     'date' => $request->date,
                 ],
                 [
                     'status' => $request->status,
-                    'check_in_time' => $request->status === 'present' || $request->status === 'late' ? now()->format('H:i:s') : null,
+                    'check_in_time' => $request->status !== 'absent' ? $currentTime->format('H:i:s') : null,
                 ]
             );
+
+            event(new \App\Events\AttendanceUpdated(
+                $student->id,
+                $attendance->status,
+                $attendance->check_in_time,
+                $attendance->check_out_time,
+                $attendance->remarks
+            ));
         }
-        return response()->json(['message' => 'Bulk attendance updated successfully']);
+
+        return back()->with('success', 'Attendance records updated successfully.');
     }
 
     public function export(Request $request)

@@ -23,16 +23,16 @@ class AttendanceExport implements FromCollection, WithHeadings, WithMapping, Sho
     public function collection()
     {
         $query = Student::query()
-            ->with(['attendance' => function($query) {
+            ->with(['attendances' => function($query) {
                 $query->where('date', $this->date);
-            }])
+            }, 'section'])
             ->where('status', 'active');
 
-        if ($this->section && $this->section !== 'All Students') {
-            $query->where('student_section', $this->section);
+        if ($this->section && $this->section !== 'all') {
+            $query->where('section_id', $this->section);
         }
 
-        return $query->orderBy('student_section')
+        return $query->orderBy('section_id')
             ->orderBy('name')
             ->get();
     }
@@ -51,12 +51,12 @@ class AttendanceExport implements FromCollection, WithHeadings, WithMapping, Sho
 
     public function map($student): array
     {
-        $attendance = $student->attendance->first();
+        $attendance = $student->attendances->first();
 
         return [
             $student->id,
             $student->name,
-            $student->student_section,
+            $student->section?->name ?? 'N/A',
             $attendance ? $attendance->status : 'absent',
             $attendance ? $attendance->check_in_time : '-',
             $attendance ? $attendance->remarks : '-',

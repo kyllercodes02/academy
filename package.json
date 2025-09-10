@@ -33,7 +33,6 @@
         "lucide-react": "^0.513.0",
         "pusher-js": "^8.4.0",
         "react-hot-toast": "^2.5.2",
-        "recharts": "^2.15.3",
-        "twilio": "^5.8.0"
+        "recharts": "^2.15.3"
     }
 }

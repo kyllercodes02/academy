@@ -31,7 +31,7 @@ class IsAdmin
 
         // For all other admin routes, require authentication
         if (!Auth::guard('admin')->check()) {
-            return redirect()->route('admin.login');
+            return redirect()->route('login')->with('error', 'Please log in to access the admin panel.');
         }
 
         return $next($request);

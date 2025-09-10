@@ -3,6 +3,11 @@ import { Head, useForm, usePage } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 
 export default function Create({ auth, sections = [], gradeLevels = [], guardians = [] }) {
+    const getSectionLabel = (name = '') => {
+        // Extract trailing section letter (A–E) if present, otherwise show original
+        const match = String(name).match(/([A-E])$/i);
+        return match ? match[1].toUpperCase() : name;
+    };
     const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
         name: '',
         section_id: '',
@@ -86,7 +91,7 @@ export default function Create({ auth, sections = [], gradeLevels = [], guardian
                                         >
                                             <option value="">Select Section</option>
                                             {sections.map(section => (
-                                                <option key={section.id} value={section.id}>{section.name}</option>
+                                                <option key={section.id} value={section.id}>{getSectionLabel(section.name)}</option>
                                             ))}
                                         </select>
                                         {errors.section_id && <p className="mt-2 text-sm text-red-600">{errors.section_id}</p>}

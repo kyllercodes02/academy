@@ -9,12 +9,10 @@ class SmsService
 {
     public function send(string $toPhoneNumber, string $message): bool
     {
-        $sid = config('services.twilio.sid');
-        $token = config('services.twilio.token');
-        $messagingServiceSid = config('services.twilio.messaging_service_sid');
-        $configuredFromNumber = config('services.twilio.from');
-        $enabled = (bool) config('services.twilio.enabled', false);
-        $defaultCountryCode = config('services.twilio.default_country_code');
+        $enabled = (bool) config('services.semaphore.enabled', false);
+        $apiKey = config('services.semaphore.api_key');
+        $senderName = config('services.semaphore.sender_name');
+        $defaultCountryCode = config('services.semaphore.default_country_code');
 
         if (!$enabled) {
             Log::info('[SmsService] SMS disabled; skipping send', [
@@ -24,22 +22,14 @@ class SmsService
             return true;
         }
 
-        // At least one sender configuration must be present
-        if (!$sid || !$token || (!$messagingServiceSid && !$configuredFromNumber)) {
-            Log::warning('[SmsService] Missing Twilio configuration; cannot send SMS');
+        if (!$apiKey) {
+            Log::warning('[SmsService] Missing Semaphore configuration; cannot send SMS');
             return false;
         }
 
         // Normalize and validate phone numbers to E.164
         $normalizedTo = $this->normalizeToE164($toPhoneNumber, $defaultCountryCode);
-        $isMessagingService = !empty($messagingServiceSid);
-        $normalizedFrom = $isMessagingService ? null : $this->normalizeToE164((string) $configuredFromNumber, null);
-        if (!$isMessagingService && !$normalizedFrom) {
-            Log::error('[SmsService] Invalid Twilio FROM number. Must be in E.164.', [
-                'from' => $configuredFromNumber,
-            ]);
-            return false;
-        }
+        // Semaphore does not require E.164 from-number; optional sender name must be pre-approved.
         if (!$normalizedTo) {
             Log::error('[SmsService] Invalid destination number. Must be in E.164.', [
                 'to' => $toPhoneNumber,
@@ -48,25 +38,21 @@ class SmsService
         }
 
         try {
-            $url = "https://api.twilio.com/2010-04-01/Accounts/{$sid}/Messages.json";
+            $url = 'https://api.semaphore.co/api/v4/messages';
 
             $payload = [
-                'To' => $normalizedTo,
-                'Body' => $message,
+                'apikey' => $apiKey,
+                'number' => $normalizedTo,
+                'message' => $message,
             ];
-
-            if ($isMessagingService) {
-                $payload['MessagingServiceSid'] = $messagingServiceSid;
-            } else {
-                $payload['From'] = $normalizedFrom;
+            if (!empty($senderName)) {
+                $payload['sendername'] = $senderName;
             }
 
-            $response = Http::withBasicAuth($sid, $token)
-                ->asForm()
-                ->post($url, $payload);
+            $response = Http::asForm()->post($url, $payload);
 
             if (!$response->successful()) {
-                Log::error('[SmsService] Failed to send SMS', [
+                Log::error('[SmsService] Failed to send SMS via Semaphore', [
                     'status' => $response->status(),
                     'body' => $response->body(),
                 ]);
@@ -75,7 +61,7 @@ class SmsService
 
             return true;
         } catch (\Throwable $e) {
-            Log::error('[SmsService] Exception sending SMS', [
+            Log::error('[SmsService] Exception sending SMS via Semaphore', [
                 'error' => $e->getMessage(),
             ]);
             return false;

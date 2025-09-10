@@ -25,7 +25,7 @@ Route::middleware(['web', 'guest'])->prefix('admin')->group(function () {
 });
 
 // Admin authenticated routes
-Route::middleware(['web', 'auth:admin'])->prefix('admin')->group(function () {
+Route::middleware(['web', 'is.admin'])->prefix('admin')->group(function () {
     // Dashboard
     Route::get('/dashboard', [App\Http\Controllers\Admin\AdminController::class, 'index'])
         ->name('admin.dashboard');
@@ -66,6 +66,7 @@ Route::middleware(['web', 'auth:admin'])->prefix('admin')->group(function () {
         ]);
     Route::post('/students/import', [StudentController::class, 'import'])->name('admin.students.import');
     Route::post('/students/upload-csv', [StudentController::class, 'uploadCSV'])->name('admin.students.upload-csv');
+    Route::get('/students/csv-template', [StudentController::class, 'downloadCsvTemplate'])->name('admin.students.csv-template');
 
     // Guardian Management
     Route::resource('guardians', GuardianController::class)

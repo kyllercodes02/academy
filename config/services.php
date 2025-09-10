@@ -35,15 +35,13 @@ return [
         ],
     ],
 
-   'twilio' => [
-    'enabled' => env('TWILIO_ENABLED', false),
-    'sid' => env('TWILIO_ACCOUNT_SID'),
-    'token' => env('TWILIO_AUTH_TOKEN'),
-    'from' => env('TWILIO_FROM'),
-    'messaging_service_sid' => env('TWILIO_MSG_SERVICE_SID'),
-    // Optional: used to normalize local numbers to E.164 (e.g. +63)
-    'default_country_code' => env('TWILIO_DEFAULT_COUNTRY_CODE'),
-],
+    'semaphore' => [
+        'enabled' => env('SEMAPHORE_ENABLED', false),
+        'api_key' => env('SEMAPHORE_API_KEY'),
+        'sender_name' => env('SEMAPHORE_SENDER_NAME'), // Optional, requires approved sender name
+        // Optional: used to normalize local numbers to E.164 (e.g. +63)
+        'default_country_code' => env('SEMAPHORE_DEFAULT_COUNTRY_CODE'),
+    ],
 
 
 

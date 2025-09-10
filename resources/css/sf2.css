@@ -1,0 +1,125 @@
+.sf2-container {
+  background: #ffffff;
+  padding: 24px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+}
+
+.sf2-header {
+  margin-bottom: 16px;
+}
+
+.sf2-title {
+  text-align: center;
+  font-weight: 700;
+  font-size: 18px;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+
+.sf2-meta-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+.sf2-meta-table td {
+  border: 1px solid #111827;
+  padding: 6px 8px;
+  font-size: 12px;
+}
+.sf2-meta-label {
+  width: 140px;
+  font-weight: 600;
+  background: #f9fafb;
+}
+.sf2-meta-value {
+  font-weight: 500;
+}
+
+.sf2-table-wrapper {
+  overflow-x: auto;
+  margin-top: 8px;
+}
+
+.sf2-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 12px;
+}
+
+.sf2-th, .sf2-cell {
+  border: 1px solid #111827;
+  padding: 4px 6px;
+}
+
+.sf2-th {
+  text-align: center;
+  font-weight: 700;
+  background: #f3f4f6;
+}
+
+.sf2-center { text-align: center; }
+.sf2-narrow { width: 36px; }
+
+.sf2-name {
+  width: 260px;
+}
+.sf2-name-wrap {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 4px;
+}
+.sf2-name-last, .sf2-name-first, .sf2-name-middle {
+  display: inline-block;
+  border-bottom: 1px solid #9ca3af;
+  min-height: 18px;
+}
+
+.sf2-day {
+  width: 34px;
+}
+.sf2-day-wrapper { display: flex; flex-direction: column; align-items: center; }
+.sf2-day-num { font-weight: 700; line-height: 1; }
+.sf2-day-dow { font-size: 10px; color: #4b5563; line-height: 1; }
+
+.sf2-weekend { background: #f9fafb; }
+
+.sf2-remarks { min-width: 180px; }
+
+.sf2-section {
+  padding: 6px 8px;
+  font-weight: 700;
+  background: #f3f4f6;
+  border: 1px solid #111827;
+  text-align: left;
+}
+
+.sf2-total-label {
+  font-weight: 600;
+  background: #f9fafb;
+  border: 1px solid #111827;
+}
+
+.sf2-strong { font-weight: 700; }
+
+.sf2-guidelines {
+  margin-top: 16px;
+  border: 1px solid #111827;
+  padding: 12px;
+}
+.sf2-guidelines-title {
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.sf2-guidelines-list {
+  margin-left: 16px;
+  list-style: decimal;
+}
+
+.sf2-codes { margin-top: 12px; }
+.sf2-codes-title { font-weight: 700; margin-bottom: 4px; }
+.sf2-codes-list { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px 12px; }
+.sf2-code { display: inline-block; min-width: 20px; font-weight: 700; }
+
+

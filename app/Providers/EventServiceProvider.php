@@ -7,6 +7,8 @@ use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 use App\Events\AttendanceUpdated;
 use App\Listeners\SendAttendanceSmsNotification;
+use App\Events\AlertTriggered;
+use App\Listeners\SendAlertNotification;
 
 class EventServiceProvider extends ServiceProvider
 {
@@ -21,6 +23,9 @@ class EventServiceProvider extends ServiceProvider
         ],
         AttendanceUpdated::class => [
             SendAttendanceSmsNotification::class,
+        ],
+        AlertTriggered::class => [
+            SendAlertNotification::class,
         ],
     ];
 
