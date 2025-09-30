@@ -4,6 +4,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\WelcomeController;
+use App\Http\Controllers\Api\AtRiskStudentController;
+use App\Http\Controllers\Admin\AuthorizedPersonController;
+// AdminManagementController removed with management feature
 
 /*
 |--------------------------------------------------------------------------
@@ -26,6 +29,13 @@ Route::middleware('auth:sanctum')->group(function () {
         return $request->user();
     });
 
+    // At-Risk Students Routes
+    Route::prefix('at-risk-students')->group(function () {
+        Route::get('/', [AtRiskStudentController::class, 'index'])->middleware('role:admin');
+        Route::get('/teacher', [AtRiskStudentController::class, 'teacherIndex'])->middleware('role:teacher');
+        Route::get('/{id}', [AtRiskStudentController::class, 'show'])->middleware('role:admin,teacher');
+    });
+
     // Admin Routes
     Route::middleware('role:admin')->prefix('admin')->group(function () {
         // Attendance Management
@@ -34,6 +44,18 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('/update', [AttendanceController::class, 'updateAttendance']);
             Route::post('/record', [AttendanceController::class, 'recordAttendance']);
         });
+
+        // Authorized Persons Management
+        Route::prefix('authorized-persons')->group(function () {
+            Route::get('/', [AuthorizedPersonController::class, 'index']);
+            Route::post('/', [AuthorizedPersonController::class, 'store']);
+            Route::get('/{id}', [AuthorizedPersonController::class, 'show']);
+            Route::put('/{id}', [AuthorizedPersonController::class, 'update']);
+            Route::delete('/{id}', [AuthorizedPersonController::class, 'destroy']);
+            Route::post('/{id}/set-primary', [AuthorizedPersonController::class, 'setPrimary']);
+        });
+
+        // Management API removed
     });
 
     // Teacher Routes

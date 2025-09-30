@@ -11,7 +11,8 @@ class NotificationController extends Controller
 {
     public function index()
     {
-        $user = Auth::user();
+        // Ensure we use the admin guard consistently
+        $user = Auth::guard('admin')->user();
         $notifications = $user->notifications()->latest()->limit(20)->get();
 
         return Inertia::render('Admin/Notifications/Index', [
@@ -22,7 +23,7 @@ class NotificationController extends Controller
 
     public function fetch()
     {
-        $user = Auth::user();
+        $user = Auth::guard('admin')->user();
         return response()->json([
             'notifications' => $user->notifications()->latest()->limit(20)->get(),
             'unread_count' => $user->unreadNotifications()->count(),
@@ -31,7 +32,7 @@ class NotificationController extends Controller
 
     public function markAsRead(Request $request, string $id)
     {
-        $user = Auth::user();
+        $user = Auth::guard('admin')->user();
         $notification = $user->notifications()->where('id', $id)->firstOrFail();
         if (is_null($notification->read_at)) {
             $notification->markAsRead();
@@ -41,7 +42,7 @@ class NotificationController extends Controller
 
     public function markAllAsRead()
     {
-        $user = Auth::user();
+        $user = Auth::guard('admin')->user();
         $user->unreadNotifications->markAsRead();
         return response()->json(['success' => true]);
     }

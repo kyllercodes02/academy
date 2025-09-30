@@ -83,7 +83,7 @@ export default function StudentManagement({ students, sections, gradeLevels, gua
     }, [isGuardianDropdownOpen]);
 
     const debouncedSearch = debounce((query, sectionId, gradeId) => {
-        router.get(route('admin.students.index'), { search: query, section: sectionId, grade: gradeId }, { preserveState: true, preserveScroll: true });
+        router.get(route('admin.students.index'), { search: query, section: sectionId, grade: gradeId, page: 1 }, { preserveState: true, preserveScroll: true, replace: true });
     }, 500);
 
     const handleSearchChange = (e) => {
@@ -100,20 +100,24 @@ export default function StudentManagement({ students, sections, gradeLevels, gua
     const handleGradeFilterChange = (e) => {
         const newGrade = e.target.value;
         setSelectedGradeFilter(newGrade);
-        
+
+        let nextSection = selectedSectionFilter;
+
         // Filter sections based on selected grade
         if (newGrade) {
-            const gradeSections = sections.filter(section => section.grade_level_id == newGrade);
+            const gradeSections = sections.filter(section => String(section.grade_level_id) == String(newGrade));
             setFilteredSections(gradeSections);
             // Reset section filter if it's not valid for the new grade
-            if (selectedSectionFilter && !gradeSections.find(s => s.id == selectedSectionFilter)) {
+            if (selectedSectionFilter && !gradeSections.find(s => String(s.id) == String(selectedSectionFilter))) {
+                nextSection = '';
                 setSelectedSectionFilter('');
             }
         } else {
             setFilteredSections(sections);
         }
-        
-        debouncedSearch(searchQuery, selectedSectionFilter, newGrade);
+
+        // Use computed nextSection to avoid passing stale state
+        debouncedSearch(searchQuery, nextSection, newGrade);
     };
 
     const openModal = (student = null) => {
@@ -559,9 +563,9 @@ export default function StudentManagement({ students, sections, gradeLevels, gua
                     <select
                         value={selectedGradeFilter}
                         onChange={handleGradeFilterChange}
-                        className="border border-gray-300 p-2 rounded"
+                        className="border border-gray-300 p-2 rounded w-32"
                     >
-                        <option value="">All Grades</option>
+                        <option value="">Grades</option>
                         {gradeLevels.map(grade => (
                             <option key={grade.id} value={grade.id}>{grade.name}</option>
                         ))}
@@ -572,9 +576,9 @@ export default function StudentManagement({ students, sections, gradeLevels, gua
                     <select
                         value={selectedSectionFilter}
                         onChange={handleSectionFilterChange}
-                        className="border border-gray-300 p-2 rounded"
+                        className="border border-gray-300 p-2 rounded w-32"
                     >
-                        <option value="">All Sections</option>
+                        <option value="">Sections</option>
                         {filteredSections.map(section => (
                             <option key={section.id} value={section.id}>{section.name}</option>
                         ))}
@@ -596,15 +600,7 @@ export default function StudentManagement({ students, sections, gradeLevels, gua
                     <Upload className="w-4 h-4 mr-2" />
                     {showCSVUpload ? 'Hide CSV Upload' : 'Import Students (CSV)'}
                 </button>
-                <a
-                    href={route('admin.students.csv-template')}
-                    className="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    download
-                >
-                    Download CSV Template
-                </a>
+                
             </div>
 
             {/* CSV Upload Form */}

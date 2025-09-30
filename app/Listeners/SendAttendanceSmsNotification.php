@@ -6,15 +6,11 @@ use App\Events\AttendanceUpdated;
 use App\Models\Student;
 use App\Services\SmsService;
 use Carbon\Carbon;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Log;
 
-class SendAttendanceSmsNotification implements ShouldQueue
+class SendAttendanceSmsNotification
 {
-    use InteractsWithQueue;
-
-    public $queue = 'notifications';
+    
 
     public function __construct(private SmsService $smsService)
     {
@@ -39,6 +35,11 @@ class SendAttendanceSmsNotification implements ShouldQueue
         foreach ($guardianUsers as $guardianUser) {
             $phone = optional($guardianUser->guardianDetails)->contact_number;
             if ($phone) {
+                Log::info('[SendAttendanceSmsNotification] Sending attendance SMS', [
+                    'student_id' => $student->id,
+                    'to' => $phone,
+                    'action' => $action,
+                ]);
                 $ok = $this->smsService->send($phone, $message);
                 $sentAny = $sentAny || $ok;
             }
@@ -48,6 +49,11 @@ class SendAttendanceSmsNotification implements ShouldQueue
         if (!$sentAny && method_exists($student, 'guardian') && $student->guardian) {
             $fallbackPhone = $student->guardian->contact_number ?? null;
             if ($fallbackPhone) {
+                Log::info('[SendAttendanceSmsNotification] Sending attendance SMS (fallback guardian)', [
+                    'student_id' => $student->id,
+                    'to' => $fallbackPhone,
+                    'action' => $action,
+                ]);
                 $ok = $this->smsService->send($fallbackPhone, $message);
                 $sentAny = $sentAny || $ok;
             }

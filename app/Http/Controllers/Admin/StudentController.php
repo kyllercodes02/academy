@@ -39,14 +39,16 @@ class StudentController extends Controller
             });
         }
 
-        // Section filter
-        if ($request->filled('section')) {
-            $query->where('section_id', $request->input('section'));
+        // Apply section and grade filters together when present
+        $sectionFilter = $request->input('section');
+        $gradeFilter = $request->input('grade');
+
+        if (!empty($sectionFilter) && $sectionFilter !== 'all' && is_numeric($sectionFilter)) {
+            $query->where('section_id', (int)$sectionFilter);
         }
 
-        // Grade level filter
-        if ($request->filled('grade')) {
-            $query->where('grade_level_id', $request->input('grade'));
+        if (!empty($gradeFilter) && $gradeFilter !== 'all' && is_numeric($gradeFilter)) {
+            $query->where('grade_level_id', (int)$gradeFilter);
         }
 
         $students = $query->paginate(15)->appends($request->only(['search', 'section', 'grade']));
@@ -67,8 +69,8 @@ class StudentController extends Controller
             'gradeLevels' => GradeLevel::all(),
             'guardians' => $guardians,
             'search' => $request->search,
-            'sectionFilter' => $request->input('section', ''),
-            'gradeFilter' => $request->input('grade', '')
+            'sectionFilter' => (!empty($sectionFilter) && $sectionFilter !== 'all') ? (string)$sectionFilter : '',
+            'gradeFilter' => (!empty($gradeFilter) && $gradeFilter !== 'all') ? (string)$gradeFilter : ''
         ]);
     }
 

@@ -74,6 +74,7 @@ export default function AdminLayout({ children }) {
             icon: Megaphone,
             type: 'single'
         },
+        
         { 
             name: 'Attendance', 
             href: route('admin.attendance.index'), 
@@ -470,7 +471,7 @@ export default function AdminLayout({ children }) {
                                         }
                                         return currentItem.name;
                                     }
-                                    return 'Dashboard';
+                                    return '';
                                 })()}
                             </span>
                         </div>

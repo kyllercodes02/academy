@@ -21,15 +21,22 @@ class AttendanceController extends Controller
     public function index(Request $request)
     {
         $date = $request->get('date', now()->format('Y-m-d'));
-        $sections = Section::orderBy('name')
-            ->get(['id', 'name'])
+        $sections = Section::with('gradeLevel')
+            ->orderBy('name')
+            ->get(['id', 'name', 'grade_level_id'])
             ->map(function ($section) {
+                $gradeLevelName = optional($section->gradeLevel)->name;
                 return [
                     'id' => $section->id,
-                    'name' => $section->name
+                    'name' => $section->name,
+                    'grade_level_id' => $section->grade_level_id,
+                    'grade_level' => $gradeLevelName,
+                    'label' => ($gradeLevelName ? ($gradeLevelName . ' - ') : '') . $section->name,
                 ];
             });
-        $section = $request->get('section', $sections->first()?->id ?? null);
+        // Respect 'all' option from UI and support grade-level filter
+        $section = $request->get('section', 'all');
+        $currentGradeLevel = $request->get('grade_level', 'all');
         
         // Query builder for students
         $query = Student::query()
@@ -38,9 +45,13 @@ class AttendanceController extends Controller
             }, 'section'])
             ->where('status', 'active');
 
-        // Filter by section if specified
-        if ($section) {
-            $query->where('section_id', $section);
+        // Apply combined filters: section (if set) and grade (if set)
+        if (!empty($section) && $section !== 'all' && is_numeric($section)) {
+            $query->where('section_id', (int)$section);
+        }
+
+        if (!empty($currentGradeLevel) && $currentGradeLevel !== 'all' && is_numeric($currentGradeLevel)) {
+            $query->where('grade_level_id', (int)$currentGradeLevel);
         }
 
         $students = $query->orderBy('name')->get();
@@ -66,7 +77,9 @@ class AttendanceController extends Controller
             'sections' => $sections,
             'currentSection' => $section,
             'currentDate' => $date,
-            'filters' => $request->all('search', 'section', 'date'),
+            'gradeLevels' => \App\Models\GradeLevel::orderBy('name')->get(['id', 'name']),
+            'currentGradeLevel' => $currentGradeLevel,
+            'filters' => $request->all('search', 'section', 'grade_level', 'date'),
         ]);
     }
 
@@ -85,12 +98,12 @@ class AttendanceController extends Controller
             }, 'section', 'gradeLevel'])
             ->where('status', 'active');
 
-        if ($section && $section !== 'all') {
-            $query->where('section_id', $section);
+        if (!empty($section) && $section !== 'all' && is_numeric($section)) {
+            $query->where('section_id', (int)$section);
         }
 
-        if ($gradeLevel && $gradeLevel !== 'all') {
-            $query->where('grade_level_id', $gradeLevel);
+        if (!empty($gradeLevel) && $gradeLevel !== 'all' && is_numeric($gradeLevel)) {
+            $query->where('grade_level_id', (int)$gradeLevel);
         }
 
         if ($request->has('search')) {
@@ -118,7 +131,19 @@ class AttendanceController extends Controller
 
         return response()->json([
             'students' => $studentsData,
-            'sections' => Section::orderBy('name')->get(['id', 'name']),
+            'sections' => Section::with('gradeLevel')
+                ->orderBy('name')
+                ->get(['id', 'name', 'grade_level_id'])
+                ->map(function ($section) {
+                    $gradeLevelName = optional($section->gradeLevel)->name;
+                    return [
+                        'id' => $section->id,
+                        'name' => $section->name,
+                        'grade_level_id' => $section->grade_level_id,
+                        'grade_level' => $gradeLevelName,
+                        'label' => ($gradeLevelName ? ($gradeLevelName . ' - ') : '') . $section->name,
+                    ];
+                }),
             'gradeLevels' => \App\Models\GradeLevel::orderBy('name')->get(['id', 'name']),
             'currentSection' => $section,
             'currentGradeLevel' => $gradeLevel,

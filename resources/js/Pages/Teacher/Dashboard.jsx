@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
+import AtRiskStudentsWidget from '@/Components/AtRiskStudentsWidget';
 
 const StatCard = ({ title, value, icon: Icon, color, trend = null }) => (
     <div className={`bg-white p-6 rounded-xl shadow hover:shadow-lg transition-shadow duration-300 border-l-4 border-${color}-600`}>
@@ -180,6 +181,11 @@ export default function Dashboard({
                                     icon={Percent}
                                     color="purple"
                                 />
+                            </div>
+
+                            {/* At-Risk Students Widget */}
+                            <div className="mb-6">
+                                <AtRiskStudentsWidget isTeacher={true} />
                             </div>
 
                             {/* Students Attendance Table */}

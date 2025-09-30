@@ -30,6 +30,8 @@ Route::middleware(['web', 'is.admin'])->prefix('admin')->group(function () {
     Route::get('/dashboard', [App\Http\Controllers\Admin\AdminController::class, 'index'])
         ->name('admin.dashboard');
 
+    // Management Panel removed
+
     // User Management
     Route::resource('users', UserController::class)
         ->except(['show'])

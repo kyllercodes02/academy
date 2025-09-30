@@ -22,7 +22,9 @@ class WelcomeController extends Controller
             'card_id' => 'required|string',
         ]);
 
-        $student = Student::with(['section', 'gradeLevel', 'todayAttendance'])
+        $student = Student::with(['section', 'gradeLevel', 'todayAttendance', 'primaryAuthorizedPerson', 'authorizedPersons' => function($query) {
+            $query->where('is_active', true)->orderBy('is_primary', 'desc');
+        }])
             ->whereRaw('LOWER(card_id) = ?', [strtolower(trim($request->card_id))])
             ->where('status', 'active')
             ->first();
@@ -117,7 +119,9 @@ class WelcomeController extends Controller
             'card_id' => 'required|string',
         ]);
 
-        $student = Student::with(['section', 'gradeLevel', 'todayAttendance'])
+        $student = Student::with(['section', 'gradeLevel', 'todayAttendance', 'primaryAuthorizedPerson', 'authorizedPersons' => function($query) {
+            $query->where('is_active', true)->orderBy('is_primary', 'desc');
+        }])
             ->whereRaw('LOWER(card_id) = ?', [strtolower(trim($request->card_id))])
             ->where('status', 'active')
             ->first();
@@ -139,6 +143,23 @@ class WelcomeController extends Controller
                 'grade_level' => $student->gradeLevel->name,
                 'student_section' => $student->section->name,
                 'photo_url' => $student->photo_url,
+                'authorized_persons' => $student->authorizedPersons->map(function ($person) {
+                    return [
+                        'id' => $person->id,
+                        'name' => $person->name,
+                        'relationship' => $person->relationship,
+                        'contact_number' => $person->contact_number,
+                        'email' => $person->email,
+                        'is_primary' => $person->is_primary,
+                    ];
+                }),
+                'primary_authorized_person' => $student->primaryAuthorizedPerson ? [
+                    'id' => $student->primaryAuthorizedPerson->id,
+                    'name' => $student->primaryAuthorizedPerson->name,
+                    'relationship' => $student->primaryAuthorizedPerson->relationship,
+                    'contact_number' => $student->primaryAuthorizedPerson->contact_number,
+                    'email' => $student->primaryAuthorizedPerson->email,
+                ] : null,
             ],
         ];
 

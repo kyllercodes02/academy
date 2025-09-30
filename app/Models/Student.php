@@ -115,6 +115,22 @@ class Student extends Model
     }
 
     /**
+     * Get the student's authorized persons for pickup.
+     */
+    public function authorizedPersons(): HasMany
+    {
+        return $this->hasMany(AuthorizedPerson::class);
+    }
+
+    /**
+     * Get the student's primary authorized person.
+     */
+    public function primaryAuthorizedPerson(): HasOne
+    {
+        return $this->hasOne(AuthorizedPerson::class)->where('is_primary', true)->where('is_active', true);
+    }
+
+    /**
      * Get today's attendance record.
      */
     public function todayAttendance(): HasOne

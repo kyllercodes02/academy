@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
+use App\Models\Admin;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
@@ -15,13 +15,11 @@ class UserController extends Controller
     {
         $search = $request->input('search');
 
-        // Only show Admin accounts in this section
-        $users = User::query()
-            ->where('role', 'admin')
+        // Only show Admin accounts from admins table
+        $users = Admin::query()
             ->when($search, function ($query, $search) {
                 $query->where('name', 'like', "%{$search}%")
-                      ->orWhere('email', 'like', "%{$search}%")
-                      ->orWhere('role', 'like', "%{$search}%");
+                      ->orWhere('email', 'like', "%{$search}%");
             })
             ->orderBy('id', 'desc')
             ->paginate(10)
@@ -37,33 +35,30 @@ class UserController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
+            'email' => 'required|string|email|max:255|unique:admins',
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             // Force Admin-only creation from this section
         ]);
 
-        User::create([
+        Admin::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role' => 'admin',
         ]);
 
         return redirect()->back()->with('success', 'User created successfully.');
     }
 
-    public function update(Request $request, User $user)
+    public function update(Request $request, Admin $user)
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
+            'email' => 'required|string|email|max:255|unique:admins,email,' . $user->id,
         ]);
 
         $data = [
             'name' => $request->name,
             'email' => $request->email,
-            // Ensure this management section keeps users as Admins only
-            'role' => 'admin',
         ];
 
         if ($request->filled('password')) {
@@ -78,7 +73,7 @@ class UserController extends Controller
         return redirect()->back()->with('success', 'User updated successfully.');
     }
 
-    public function destroy(User $user)
+    public function destroy(Admin $user)
     {
         if ($user->id === auth()->id()) {
             return redirect()->back()->with('error', 'You cannot delete your own account.');

@@ -24,14 +24,18 @@ import Pusher from 'pusher-js';
 
 export default function Index({ 
     students: initialStudents = [], 
-    sections = [], 
+    sections: initialSections = [], 
+    gradeLevels: initialGradeLevels = [],
     currentSection = 'all',
+    currentGradeLevel = 'all',
     currentDate = formatDateFns(new Date(), 'yyyy-MM-dd'), 
     filters = {} 
 }) {
     const [selectedDate, setSelectedDate] = useState(currentDate);
     const [selectedSection, setSelectedSection] = useState(currentSection || 'all');
     const [students, setStudents] = useState(initialStudents);
+    const [sections, setSections] = useState(initialSections);
+    const [gradeLevels, setGradeLevels] = useState(initialGradeLevels);
     const [loading, setLoading] = useState(false);
     const [showCheckoutDialog, setShowCheckoutDialog] = useState(false);
     const [checkoutStudentId, setCheckoutStudentId] = useState(null);
@@ -40,6 +44,7 @@ export default function Index({
     const [searchQuery, setSearchQuery] = useState('');
     const [showFilters, setShowFilters] = useState(false);
     const [showBulkActions, setShowBulkActions] = useState(false);
+    const [selectedGradeLevel, setSelectedGradeLevel] = useState(currentGradeLevel || 'all');
 
 
     useEffect(() => {
@@ -89,7 +94,20 @@ export default function Index({
     const handleSectionChange = (e) => {
         const section = e.target.value;
         setSelectedSection(section);
-        updateFilters({ section });
+        updateFilters({ section, grade_level: selectedGradeLevel });
+    };
+
+    const handleGradeLevelChange = (e) => {
+        const grade = e.target.value;
+        setSelectedGradeLevel(grade);
+        // Reset section if it doesn't belong to new grade
+        const validSections = grade === 'all' ? sections : sections.filter(s => String(s.grade_level_id) === String(grade));
+        let nextSection = selectedSection;
+        if (selectedSection !== 'all' && !validSections.find(s => String(s.id) === String(selectedSection))) {
+            nextSection = 'all';
+            setSelectedSection('all');
+        }
+        updateFilters({ grade_level: grade, section: nextSection });
     };
 
     const updateFilters = (newFilters) => {
@@ -104,6 +122,12 @@ export default function Index({
             if (data.students) {
                 setStudents(data.students);
             }
+            if (data.sections) {
+                setSections(data.sections);
+            }
+            if (data.gradeLevels) {
+                setGradeLevels(data.gradeLevels);
+            }
         } catch (error) {
             console.error('Failed to load attendance data:', error);
         }
@@ -111,13 +135,14 @@ export default function Index({
     };
 
     useEffect(() => {
-        if (selectedDate !== currentDate || selectedSection !== currentSection) {
+        if (selectedDate !== currentDate || selectedSection !== currentSection || selectedGradeLevel !== currentGradeLevel) {
             loadAttendanceData({
                 date: selectedDate,
-                section: selectedSection
+                section: selectedSection,
+                grade_level: selectedGradeLevel
             });
         }
-    }, [selectedDate, selectedSection]);
+    }, [selectedDate, selectedSection, selectedGradeLevel]);
 
     const handleStatusUpdate = async (studentId, newStatus) => {
         setLoading(true);
@@ -300,6 +325,21 @@ export default function Index({
                                     </div>
                                 </div>
                                 <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Grade</label>
+                                    <select
+                                        value={selectedGradeLevel}
+                                        onChange={handleGradeLevelChange}
+                                        className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                                    >
+                                        <option value="all">All Grades</option>
+                                        {gradeLevels.map((grade) => (
+                                            <option key={grade.id} value={grade.id}>
+                                                {grade.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">Section</label>
                                     <select
                                         value={selectedSection}
@@ -307,7 +347,7 @@ export default function Index({
                                         className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                                     >
                                         <option value="all">All Sections</option>
-                                        {sections.map((section) => (
+                                        {(selectedGradeLevel === 'all' ? sections : sections.filter(s => String(s.grade_level_id) === String(selectedGradeLevel))).map((section) => (
                                             <option key={section.id} value={section.id}>
                                                 {section.name}
                                             </option>

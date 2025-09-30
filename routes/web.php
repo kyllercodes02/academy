@@ -53,8 +53,8 @@ Broadcast::routes(['middleware' => ['auth:web,admin']]);
 Route::post('/students/lookup-by-card', [StudentController::class, 'lookupByCard'])
     ->name('students.lookup-by-card');
 
-// Admin Notifications
-Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
+// Admin Notifications (ensure admin guard via is.admin middleware)
+Route::middleware(['web', 'is.admin'])->prefix('admin')->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index'])->name('admin.notifications.index');
     Route::get('/notifications/fetch', [NotificationController::class, 'fetch'])->name('admin.notifications.fetch');
     Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('admin.notifications.read');

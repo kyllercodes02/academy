@@ -311,6 +311,41 @@ export default function Welcome() {
                                         <span className="text-gray-400">•</span>
                                         <span className="text-gray-600 font-medium capitalize">{student.gender}</span>
                                     </div>
+
+                                    {/* Authorized Person Information */}
+                                    {student.primary_authorized_person && (
+                                        <div className="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
+                                            <div className="flex items-center space-x-2 mb-2">
+                                                <UserCheck className="h-5 w-5 text-blue-600" />
+                                                <h3 className="text-lg font-semibold text-blue-900">Authorized for Pickup</h3>
+                                            </div>
+                                            <div className="text-center">
+                                                <p className="text-xl font-bold text-blue-800">{student.primary_authorized_person.name}</p>
+                                                <p className="text-blue-600 font-medium">{student.primary_authorized_person.relationship}</p>
+                                                <p className="text-sm text-blue-700 mt-1">{student.primary_authorized_person.contact_number}</p>
+                                                {student.primary_authorized_person.email && (
+                                                    <p className="text-sm text-blue-600">{student.primary_authorized_person.email}</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Additional Authorized Persons */}
+                                    {student.authorized_persons && student.authorized_persons.length > 1 && (
+                                        <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                            <h4 className="text-sm font-semibold text-gray-700 mb-2">Other Authorized Persons:</h4>
+                                            <div className="space-y-1">
+                                                {student.authorized_persons
+                                                    .filter(person => !person.is_primary)
+                                                    .slice(0, 2)
+                                                    .map((person, index) => (
+                                                    <div key={index} className="text-sm text-gray-600">
+                                                        <span className="font-medium">{person.name}</span> - {person.relationship}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                     {/* ALERT BUTTON */}
                                     <div className="mt-6 flex justify-center">
                                         <button

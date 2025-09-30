@@ -27,12 +27,11 @@ export default function Index({ sections, gradeLevels }) {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // Filter sections based on selected grade - only show A-E sections
+  // Filter sections based on selected grade
   useEffect(() => {
     if (selectedGrade) {
       const filtered = sections.filter(section => 
-        section.grade_level_id == selectedGrade && 
-        ['A', 'B', 'C', 'D', 'E'].includes(section.name)
+        String(section.grade_level_id) === String(selectedGrade)
       );
       setAvailableSections(filtered);
       setSelectedSection(''); // Reset section selection

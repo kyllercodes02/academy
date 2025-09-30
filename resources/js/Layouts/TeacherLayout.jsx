@@ -289,7 +289,7 @@ export default function TeacherLayout({ children }) {
                             <span className="font-medium text-gray-700">
                                 {(() => {
                                     const currentItem = navigation.find(item => isActive(item.routeName, item.href));
-                                    return currentItem ? currentItem.name : 'Dashboard';
+                                    return currentItem ? currentItem.name : '';
                                 })()}
                             </span>
                         </div>
