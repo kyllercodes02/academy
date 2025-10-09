@@ -17,7 +17,6 @@ import {
     TrendingUp,
     BarChart2
 } from 'lucide-react';
-import AtRiskStudentsWidget from '@/Components/AtRiskStudentsWidget';
 
 const StatCard = ({ title, value, icon: Icon, color, trend = null }) => (
     <div className={`bg-white p-6 rounded-xl shadow hover:shadow-lg transition-shadow duration-300 border-l-4 border-${color}-600`}>
@@ -105,10 +104,6 @@ export default function Dashboard({ stats, attendanceBySection, recentAttendance
                                 </div>
                             </div>
 
-                            {/* At-Risk Students Widget */}
-                            <div className="mb-6">
-                                <AtRiskStudentsWidget />
-                            </div>
 
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                 {/* Attendance by Section */}

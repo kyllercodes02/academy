@@ -72,3 +72,4 @@ Route::get('/dev/test-alert', function () {
     event(new AlertTriggered($payload));
     return response()->json(['success' => true, 'message' => 'Alert dispatched']);
 });
+

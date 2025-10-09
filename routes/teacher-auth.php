@@ -40,6 +40,8 @@ Route::middleware(['auth', 'role:teacher'])->prefix('teacher')->name('teacher.')
     // Students
     Route::get('/students', [StudentController::class, 'index'])
         ->name('students.index');
+    Route::post('/students', [StudentController::class, 'store'])
+        ->name('students.store');
     Route::get('/students/{student}', [StudentController::class, 'show'])
         ->name('students.show');
     Route::get('/students/{student}/edit', [StudentController::class, 'edit'])
@@ -70,6 +72,8 @@ Route::middleware(['auth', 'role:teacher'])->prefix('teacher')->name('teacher.')
         ->name('sf2.generate');
     Route::get('/sf2/download', [App\Http\Controllers\Teacher\SF2Controller::class, 'download'])
         ->name('sf2.download');
+    Route::post('/sf2/export-excel', [App\Http\Controllers\Teacher\SF2Controller::class, 'exportExcel'])
+        ->name('sf2.export-excel');
 
     // Settings
     Route::get('/settings', [App\Http\Controllers\Teacher\SettingsController::class, 'index'])

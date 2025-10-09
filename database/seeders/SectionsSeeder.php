@@ -14,21 +14,32 @@ class SectionsSeeder extends Seeder
     {
         $currentYear = date('Y') . '-' . (date('Y') + 1);
         
-        $sections = [
-            ['name' => 'Section A', 'grade_level' => '10'],
-            ['name' => 'Section B', 'grade_level' => '10'],
-            ['name' => 'Section C', 'grade_level' => '11'],
-            ['name' => 'Section D', 'grade_level' => '11'],
-        ];
+        // Get all grade levels
+        $gradeLevels = \App\Models\GradeLevel::all();
+        
+        $sections = [];
+        
+        // Create sections A-E for each grade level
+        foreach ($gradeLevels as $gradeLevel) {
+            for ($i = 0; $i < 5; $i++) {
+                $sectionName = chr(65 + $i); // A, B, C, D, E
+                $sections[] = [
+                    'name' => "Section {$sectionName}",
+                    'grade_level_id' => $gradeLevel->id,
+                    'academic_year' => $currentYear,
+                ];
+            }
+        }
 
         foreach ($sections as $section) {
             Section::updateOrCreate(
                 [
                     'name' => $section['name'],
+                    'grade_level_id' => $section['grade_level_id'],
                     'academic_year' => $currentYear,
                 ],
                 [
-                    'grade_level' => $section['grade_level'],
+                    'academic_year' => $currentYear,
                 ]
             );
         }

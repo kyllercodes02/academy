@@ -13,6 +13,8 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\SF2Export;
 
 class SF2Controller extends Controller
 {
@@ -233,5 +235,50 @@ class SF2Controller extends Controller
         }
 
         return $schoolDays;
+    }
+
+    /**
+     * Generate and download SF2 Excel file
+     */
+    public function exportExcel(Request $request)
+    {
+        try {
+            $request->validate([
+                'month' => 'required|integer|between:1,12',
+                'year' => 'required|integer|min:2020',
+            ]);
+
+            $teacher = Auth::user();
+            $teacherAssignment = $teacher->teacherAssignments()->with(['section', 'gradeLevel'])->first();
+
+            if (!$teacherAssignment) {
+                return response()->json(['error' => 'No section assigned.'], 403);
+            }
+
+            $month = $request->input('month');
+            $year = $request->input('year');
+            $sectionId = $teacherAssignment->section_id;
+
+            $section = $teacherAssignment->section;
+            $gradeLevel = $teacherAssignment->gradeLevel;
+
+            $filename = "School Form 2 (SF2) - Excel Format_{$section->name}_{$gradeLevel->name}_{$month}_{$year}.xlsx";
+
+            return Excel::download(new SF2Export($year, $month, $sectionId), $filename);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['error' => 'Validation failed', 'details' => $e->errors()], 422);
+        } catch (\Exception $e) {
+            \Log::error('SF2 Excel Export Error: ' . $e->getMessage());
+            \Log::error('SF2 Excel Export Stack Trace: ' . $e->getTraceAsString());
+            
+            return response()->json([
+                'error' => 'Failed to generate SF2 Excel file: ' . $e->getMessage(),
+                'details' => [
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                ]
+            ], 500);
+        }
     }
 }

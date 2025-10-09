@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import TeacherLayout from '@/Layouts/TeacherLayout';
-import { FileText, Download, Calendar, BookOpen, Users, GraduationCap } from 'lucide-react';
+import { FileText, Download, Calendar, BookOpen, Users, GraduationCap, FileSpreadsheet } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 export default function SF2Generation({ section, gradeLevel }) {
     const [isGenerating, setIsGenerating] = useState(false);
+    const [isExportingExcel, setIsExportingExcel] = useState(false);
     const { flash } = usePage().props;
     
     const { data, setData, post, processing, errors } = useForm({
@@ -13,12 +14,15 @@ export default function SF2Generation({ section, gradeLevel }) {
         year: new Date().getFullYear(),
     });
 
-    // Show success message if PDF was generated
+    // Show flash messages
     React.useEffect(() => {
         if (flash.success) {
             toast.success(flash.success);
         }
-    }, [flash.success]);
+        if (flash.error) {
+            toast.error(flash.error);
+        }
+    }, [flash.success, flash.error]);
 
     const months = [
         { value: 1, label: 'January' },
@@ -62,6 +66,50 @@ export default function SF2Generation({ section, gradeLevel }) {
 
     const handleDownload = () => {
         window.open(route('teacher.sf2.download'), '_blank');
+    };
+
+    const handleExportExcel = () => {
+        setIsExportingExcel(true);
+        
+        // Create a hidden form to submit the Excel export request
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = route('teacher.sf2.export-excel');
+        form.style.display = 'none';
+        // Remove target="_blank" to allow proper download
+
+        // Add CSRF token from meta tag
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        if (csrfToken) {
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = '_token';
+            csrfInput.value = csrfToken;
+            form.appendChild(csrfInput);
+        }
+
+        // Add month and year
+        const monthInput = document.createElement('input');
+        monthInput.type = 'hidden';
+        monthInput.name = 'month';
+        monthInput.value = data.month;
+        form.appendChild(monthInput);
+
+        const yearInput = document.createElement('input');
+        yearInput.type = 'hidden';
+        yearInput.name = 'year';
+        yearInput.value = data.year;
+        form.appendChild(yearInput);
+
+        document.body.appendChild(form);
+        form.submit();
+        document.body.removeChild(form);
+
+        // Show success message after a short delay
+        setTimeout(() => {
+            toast.success('Excel file download started!');
+            setIsExportingExcel(false);
+        }, 1000);
     };
 
     return (
@@ -194,7 +242,33 @@ export default function SF2Generation({ section, gradeLevel }) {
                                     ) : (
                                         <>
                                             <FileText className="h-4 w-4 mr-2" />
-                                            Generate SF2 Report
+                                            Generate SF2 Report (PDF)
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+
+                            {/* Excel Export Button */}
+                            <div className="pt-2">
+                                <button
+                                    type="button"
+                                    onClick={handleExportExcel}
+                                    disabled={isExportingExcel || !section || !gradeLevel}
+                                    className={`w-full flex items-center justify-center px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 ${
+                                        isExportingExcel || !section || !gradeLevel
+                                            ? 'bg-gray-400 cursor-not-allowed'
+                                            : 'bg-green-600 hover:bg-green-700'
+                                    }`}
+                                >
+                                    {isExportingExcel ? (
+                                        <>
+                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                            Generating Excel File...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <FileSpreadsheet className="h-4 w-4 mr-2" />
+                                            Generate SF2 Excel File
                                         </>
                                     )}
                                 </button>
@@ -244,6 +318,26 @@ export default function SF2Generation({ section, gradeLevel }) {
                                     <li>Monthly attendance totals</li>
                                     <li>Official DepEd format compliance</li>
                                 </ul>
+                            </div>
+
+                            <div>
+                                <h4 className="font-semibold text-gray-800 mb-2">Export Options:</h4>
+                                <div className="space-y-2">
+                                    <div className="flex items-start space-x-2">
+                                        <FileText className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                                        <div>
+                                            <p className="font-medium text-blue-800">PDF Format</p>
+                                            <p className="text-xs text-gray-600">Official printable report in PDF format</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-start space-x-2">
+                                        <FileSpreadsheet className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                                        <div>
+                                            <p className="font-medium text-green-800">Excel Format</p>
+                                            <p className="text-xs text-gray-600">Fully editable Excel file with formulas, auto-calculations, and frozen headers</p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                             
                             <div>

@@ -8,7 +8,7 @@ export default function Settings({ auth }) {
     const [showPassword, setShowPassword] = useState(false);
     const [showNewPassword, setShowNewPassword] = useState(false);
     
-    const { data, setData, put, processing, errors } = useForm({
+    const { data, setData, patch, processing, errors } = useForm({
         name: auth.user.name || '',
         email: auth.user.email || '',
         current_password: '',
@@ -19,7 +19,7 @@ export default function Settings({ auth }) {
     const handleSubmit = (e) => {
         e.preventDefault();
         
-        put(route('teacher.profile.update'), {
+        patch(route('teacher.profile.update'), {
             onSuccess: () => {
                 toast.success('Profile updated successfully!');
                 setData('current_password', '');

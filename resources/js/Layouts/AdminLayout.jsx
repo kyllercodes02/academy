@@ -21,7 +21,15 @@ import {
     Bell,
     LogOut,
     ChevronRight,
-    ChevronLeft
+    ChevronLeft,
+    X,
+    HelpCircle,
+    Phone,
+    Mail,
+    MessageCircle,
+    BookOpen,
+    Search,
+    ChevronRight as ChevronRightIcon
 } from 'lucide-react';
 import cn from 'classnames';
 import NotificationsDropdown from '../Pages/Shared/NotificationsDropdown';
@@ -37,6 +45,7 @@ export default function AdminLayout({ children }) {
     const [expandedGroups, setExpandedGroups] = useState({ users: false });
     const [showNotifications, setShowNotifications] = useState(false);
     const [debugMode, setDebugMode] = useState(false); // Debug mode for route testing
+    const [showHelpCenter, setShowHelpCenter] = useState(false);
     const pusherRef = React.useRef(null);
     const channelRef = React.useRef(null);
 
@@ -367,6 +376,273 @@ export default function AdminLayout({ children }) {
         return () => clearInterval(interval);
     }, []);
 
+    // Help Center Modal Component
+    const HelpCenterModal = () => {
+        const [activeSection, setActiveSection] = useState('getting-started');
+        const [searchQuery, setSearchQuery] = useState('');
+
+        const faqs = [
+            {
+                id: 1,
+                question: "How do I add a new student to the system?",
+                answer: "Navigate to Students > Add New Student. Fill in the required information including student details, guardian information, and select the appropriate grade level and section."
+            },
+            {
+                id: 2,
+                question: "How can I manage teacher assignments?",
+                answer: "Go to Users > Teachers to view all teachers. Click on a teacher to edit their assignments, subjects, and sections they teach."
+            },
+            {
+                id: 3,
+                question: "What should I do if attendance is not being recorded?",
+                answer: "Check the NFC reader connection, ensure students have registered their cards, and verify that schedules are properly configured. Contact IT support if issues persist."
+            },
+            {
+                id: 4,
+                question: "How do I create announcements?",
+                answer: "Navigate to Announcements > Create New. Fill in the title, content, select target audience (all users, specific groups), and set the publication date."
+            },
+            {
+                id: 5,
+                question: "Can I export attendance reports?",
+                answer: "Yes, go to Attendance > Reports. You can filter by date range, grade level, or section, then export the data in Excel format."
+            },
+            {
+                id: 6,
+                question: "How do I reset a student's password?",
+                answer: "Go to Students, find the student, click Edit, and use the 'Reset Password' option. The new password will be sent to the guardian's registered email."
+            }
+        ];
+
+        const gettingStartedSteps = [
+            {
+                title: "Set Up Grade Levels and Sections",
+                description: "Configure your school's grade levels and create sections for each grade.",
+                icon: GraduationCap
+            },
+            {
+                title: "Add Teachers and Assign Subjects",
+                description: "Create teacher accounts and assign them to specific subjects and sections.",
+                icon: UserCheck
+            },
+            {
+                title: "Register Students",
+                description: "Add student information and link them to guardians and sections.",
+                icon: Users
+            },
+            {
+                title: "Configure Schedules",
+                description: "Set up class schedules and time slots for attendance tracking.",
+                icon: Clock
+            },
+            {
+                title: "Set Up NFC Cards",
+                description: "Register NFC cards for students to enable automated attendance.",
+                icon: Shield
+            }
+        ];
+
+        const filteredFaqs = faqs.filter(faq => 
+            faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            faq.answer.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+
+        return (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden">
+                    {/* Header */}
+                    <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-3">
+                                <HelpCircle size={32} />
+                                <div>
+                                    <h2 className="text-2xl font-bold">Help Center</h2>
+                                    <p className="text-blue-100">Get assistance and learn how to use the system</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setShowHelpCenter(false)}
+                                className="p-2 hover:bg-blue-800 rounded-full transition-colors"
+                            >
+                                <X size={24} />
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="flex h-[calc(90vh-120px)]">
+                        {/* Sidebar */}
+                        <div className="w-64 bg-gray-50 border-r border-gray-200 p-4">
+                            <nav className="space-y-2">
+                                <button
+                                    onClick={() => setActiveSection('getting-started')}
+                                    className={cn(
+                                        "w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-colors",
+                                        activeSection === 'getting-started'
+                                            ? "bg-blue-100 text-blue-700 border-l-4 border-blue-600"
+                                            : "hover:bg-gray-100 text-gray-700"
+                                    )}
+                                >
+                                    <BookOpen size={20} />
+                                    <span>Getting Started</span>
+                                </button>
+                                <button
+                                    onClick={() => setActiveSection('faqs')}
+                                    className={cn(
+                                        "w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-colors",
+                                        activeSection === 'faqs'
+                                            ? "bg-blue-100 text-blue-700 border-l-4 border-blue-600"
+                                            : "hover:bg-gray-100 text-gray-700"
+                                    )}
+                                >
+                                    <HelpCircle size={20} />
+                                    <span>FAQs</span>
+                                </button>
+                                <button
+                                    onClick={() => setActiveSection('contact')}
+                                    className={cn(
+                                        "w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-colors",
+                                        activeSection === 'contact'
+                                            ? "bg-blue-100 text-blue-700 border-l-4 border-blue-600"
+                                            : "hover:bg-gray-100 text-gray-700"
+                                    )}
+                                >
+                                    <MessageCircle size={20} />
+                                    <span>Contact Support</span>
+                                </button>
+                            </nav>
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1 overflow-y-auto p-6">
+                            {activeSection === 'getting-started' && (
+                                <div className="space-y-6">
+                                    <div>
+                                        <h3 className="text-2xl font-bold text-gray-800 mb-2">Getting Started</h3>
+                                        <p className="text-gray-600">Follow these steps to set up your academy management system:</p>
+                                    </div>
+                                    <div className="space-y-4">
+                                        {gettingStartedSteps.map((step, index) => {
+                                            const Icon = step.icon;
+                                            return (
+                                                <div key={index} className="flex items-start space-x-4 p-4 bg-white rounded-lg border border-gray-200 hover:shadow-md transition-shadow">
+                                                    <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                                        <Icon size={20} className="text-blue-600" />
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <h4 className="font-semibold text-gray-800 mb-1">{step.title}</h4>
+                                                        <p className="text-gray-600 text-sm">{step.description}</p>
+                                                    </div>
+                                                    <div className="flex-shrink-0 text-blue-600 font-bold">
+                                                        {index + 1}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
+                            {activeSection === 'faqs' && (
+                                <div className="space-y-6">
+                                    <div>
+                                        <h3 className="text-2xl font-bold text-gray-800 mb-2">Frequently Asked Questions</h3>
+                                        <div className="relative">
+                                            <Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                                            <input
+                                                type="text"
+                                                placeholder="Search FAQs..."
+                                                value={searchQuery}
+                                                onChange={(e) => setSearchQuery(e.target.value)}
+                                                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-4">
+                                        {filteredFaqs.map((faq) => (
+                                            <div key={faq.id} className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
+                                                <h4 className="font-semibold text-gray-800 mb-2">{faq.question}</h4>
+                                                <p className="text-gray-600 text-sm">{faq.answer}</p>
+                                            </div>
+                                        ))}
+                                        {filteredFaqs.length === 0 && searchQuery && (
+                                            <div className="text-center py-8 text-gray-500">
+                                                <Search size={48} className="mx-auto mb-4 text-gray-300" />
+                                                <p>No FAQs found matching your search.</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {activeSection === 'contact' && (
+                                <div className="space-y-6">
+                                    <div>
+                                        <h3 className="text-2xl font-bold text-gray-800 mb-2">Contact Support</h3>
+                                        <p className="text-gray-600">Get in touch with our support team for assistance.</p>
+                                    </div>
+                                    <div className="grid md:grid-cols-2 gap-6">
+                                        <div className="bg-white rounded-lg border border-gray-200 p-6">
+                                            <div className="flex items-center space-x-3 mb-4">
+                                                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                                                    <Phone size={20} className="text-green-600" />
+                                                </div>
+                                                <div>
+                                                    <h4 className="font-semibold text-gray-800">Phone Support</h4>
+                                                    <p className="text-sm text-gray-600">Call us for immediate assistance</p>
+                                                </div>
+                                            </div>
+                                            <p className="text-lg font-medium text-gray-800">+63 (2) 1234-5678</p>
+                                            <p className="text-sm text-gray-600 mt-1">Monday - Friday, 8:00 AM - 5:00 PM</p>
+                                        </div>
+
+                                        <div className="bg-white rounded-lg border border-gray-200 p-6">
+                                            <div className="flex items-center space-x-3 mb-4">
+                                                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                                    <Mail size={20} className="text-blue-600" />
+                                                </div>
+                                                <div>
+                                                    <h4 className="font-semibold text-gray-800">Email Support</h4>
+                                                    <p className="text-sm text-gray-600">Send us an email anytime</p>
+                                                </div>
+                                            </div>
+                                            <p className="text-lg font-medium text-gray-800">support@zionacademy.edu</p>
+                                            <p className="text-sm text-gray-600 mt-1">We'll respond within 24 hours</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 p-6">
+                                        <h4 className="font-semibold text-gray-800 mb-3">Quick Support Form</h4>
+                                        <div className="space-y-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Brief description of your issue"
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Message</label>
+                                                <textarea
+                                                    rows={4}
+                                                    placeholder="Describe your issue in detail..."
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                />
+                                            </div>
+                                            <button className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                                                Send Message
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     return (
         <div className="min-h-screen flex bg-gray-50">
             {/* Sidebar */}
@@ -417,9 +693,12 @@ export default function AdminLayout({ children }) {
                         <div className="bg-white rounded-lg p-3 shadow-sm">
                             <p className="font-semibold text-gray-700 mb-1">Need Help?</p>
                             <p className="text-gray-500 mb-3 text-xs">Contact IT support for assistance.</p>
-                            <a href="#" className="text-blue-600 hover:text-blue-800 text-xs inline-flex items-center transition-colors">
+                            <button 
+                                onClick={() => setShowHelpCenter(true)}
+                                className="text-blue-600 hover:text-blue-800 text-xs inline-flex items-center transition-colors"
+                            >
                                 <span className="underline">View Help Center</span>
-                            </a>
+                            </button>
                         </div>
                     </div>
                 )}
@@ -528,6 +807,9 @@ export default function AdminLayout({ children }) {
                     },
                 }}
             />
+            
+            {/* Help Center Modal */}
+            {showHelpCenter && <HelpCenterModal />}
         </div>
     );
 }
