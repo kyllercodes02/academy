@@ -5,629 +5,681 @@
     <title>School Form 2 (SF2) - Daily Attendance Report of Learners</title>
     <style>
         @page {
-            size: A4 landscape;
-            margin: 0.4in;
+            size: legal landscape;
+            margin: 0.3in;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
         }
         
         body { 
-            font-family: Arial, sans-serif; 
-            font-size: 9px; 
-            margin: 0;
-            padding: 0;
-            line-height: 1.2;
+            font-family: Arial, Helvetica, sans-serif; 
+            font-size: 9pt; 
             color: #000;
+            background: white;
+            padding: 15px;
         }
         
-        .header {
-            display: flex;
-            align-items: flex-start;
-            margin-bottom: 15px;
-            position: relative;
+        .page {
+            width: 100%;
+            max-width: 13.5in;
+            margin: 0 auto;
         }
         
-        .deped-logo {
-            width: 60px;
-            height: 60px;
-            border: 2px solid #000;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(45deg, #1e3a8a, #3b82f6);
-            color: white;
-            font-size: 8pt;
-            font-weight: bold;
+        /* Header */
+        .header-box {
+            border: 3px solid #000;
+            padding: 8px 12px;
+        }
+        
+        .header-row {
+            display: table;
+            width: 100%;
+        }
+        
+        .logo-left, .header-center, .logo-right {
+            display: table-cell;
+            vertical-align: middle;
+        }
+        
+        .logo-left, .logo-right {
+            width: 70px;
+        }
+        
+        .logo-left img, .logo-right img {
+            width: 65px;
+            height: 65px;
+            display: block;
+        }
+        
+        .header-center {
             text-align: center;
-            margin-right: 20px;
-            flex-shrink: 0;
+            padding: 0 15px;
         }
         
-        .header-text {
-            flex: 1;
-            text-align: center;
-            padding-top: 8px;
-        }
-        
-        .republic-text {
-            font-size: 11pt;
+        .title-main {
+            font-size: 16pt;
             font-weight: bold;
             margin-bottom: 2px;
         }
         
-        .deped-text {
-            font-size: 10pt;
-            font-weight: bold;
-            margin-bottom: 8px;
-        }
-        
-        .form-title {
-            font-size: 16pt;
-            font-weight: bold;
-            margin-bottom: 4px;
-        }
-        
-        .form-subtitle {
+        .title-sub {
             font-size: 8pt;
             font-style: italic;
-            margin-bottom: 10px;
         }
         
-        .form-info {
-            display: grid;
-            grid-template-columns: auto 1fr auto 1fr auto 1fr;
-            gap: 15px;
-            align-items: center;
-            margin-bottom: 8px;
-            font-size: 9pt;
+        /* Info Fields */
+        .info-section {
+            border: 3px solid #000;
+            border-top: none;
+            padding: 8px 12px;
         }
         
-        .form-info-row2 {
-            display: grid;
-            grid-template-columns: auto 2fr auto 1fr auto 1fr;
-            gap: 15px;
-            align-items: center;
-            margin-bottom: 15px;
-            font-size: 9pt;
+        .info-line {
+            display: table;
+            width: 100%;
+            margin-bottom: 6px;
         }
         
-        .field-label {
+        .info-line:last-child {
+            margin-bottom: 0;
+        }
+        
+        .info-item {
+            display: table-cell;
+            vertical-align: middle;
+            padding-right: 8px;
+        }
+        
+        .info-label {
             font-weight: bold;
+            font-size: 8pt;
             white-space: nowrap;
+            padding-right: 4px;
         }
         
-        .field-value {
-            border: 1px solid #000;
+        .info-box {
+            border: 2px solid #000;
             padding: 4px 8px;
-            min-height: 16px;
-            display: flex;
-            align-items: center;
+            display: inline-block;
+            min-width: 100px;
+            min-height: 20px;
             background: white;
         }
         
-        .main-table {
+        .info-box.small { min-width: 95px; }
+        .info-box.medium { min-width: 140px; }
+        .info-box.large { min-width: 350px; }
+        
+        /* Main Table */
+        .attendance-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 7pt;
-            margin-bottom: 8px;
             border: 2px solid #000;
+            margin: 8px 0;
         }
         
-        .main-table th,
-        .main-table td {
+        .attendance-table th,
+        .attendance-table td {
             border: 1px solid #000;
             padding: 2px;
             text-align: center;
             vertical-align: middle;
+            font-size: 7pt;
         }
         
-        .main-table th {
-            background-color: #f0f0f0;
+        .attendance-table thead th {
             font-weight: bold;
+            background: white;
+            padding: 3px 2px;
         }
         
-        .main-table th:first-child,
-        .main-table td:first-child {
-            border-left: 2px solid #000;
+        .num-col {
+            width: 22px;
+            background: #f0f0f0;
+            font-size: 7pt;
         }
         
-        .main-table th:last-child,
-        .main-table td:last-child {
-            border-right: 2px solid #000;
-        }
-        
-        .main-table thead th {
-            border-top: 2px solid #000;
-        }
-        
-        .main-table tbody tr:last-child td {
-            border-bottom: 2px solid #000;
+        .name-col {
+            width: 145px;
+            text-align: left;
+            padding-left: 4px;
+            font-size: 7pt;
         }
         
         .name-header {
-            width: 120px;
-            text-align: center;
-            font-size: 7pt;
+            width: 145px;
+            font-size: 7.5pt;
+            line-height: 1.2;
             padding: 4px;
-            line-height: 1.1;
         }
         
-        .name-cell {
-            width: 120px;
-            text-align: left;
-            padding: 3px;
-            font-size: 7pt;
-        }
-        
-        .day-header {
-            width: 12px;
-            font-size: 6pt;
-            writing-mode: vertical-lr;
-            text-orientation: mixed;
-            padding: 2px;
-        }
-        
-        .day-cell {
-            width: 12px;
-            height: 20px;
+        .day-col {
+            width: 13px;
+            min-width: 13px;
+            max-width: 13px;
+            height: 22px;
             font-size: 7pt;
             position: relative;
+            padding: 1px;
         }
         
-        .day-cell::before {
+        .day-col::before {
             content: "";
             position: absolute;
             top: 1px;
             left: 1px;
             right: 1px;
             bottom: 1px;
-            background: repeating-linear-gradient(
-                45deg,
-                transparent,
-                transparent 1px,
-                #e0e0e0 1px,
-                #e0e0e0 2px
-            );
+            background: 
+                repeating-linear-gradient(
+                    135deg,
+                    transparent,
+                    transparent 2px,
+                    #ddd 2px,
+                    #ddd 3px
+                );
+            pointer-events: none;
         }
         
-        .total-header {
-            width: 25px;
-            font-size: 6pt;
-            writing-mode: vertical-lr;
-            text-orientation: mixed;
-            padding: 2px;
+        .day-col span {
+            position: relative;
+            z-index: 1;
         }
         
-        .total-cell {
-            width: 25px;
+        .total-col {
+            width: 32px;
             font-size: 7pt;
+        }
+        
+        .remarks-col {
+            width: 110px;
+            font-size: 6.5pt;
+            text-align: left;
+            padding: 2px 3px;
         }
         
         .remarks-header {
-            width: 80px;
-            font-size: 6pt;
-            padding: 2px;
-            line-height: 1.0;
+            width: 110px;
+            font-size: 6.5pt;
+            line-height: 1.15;
         }
         
-        .remarks-cell {
-            width: 80px;
-            font-size: 6pt;
-            padding: 2px;
-            text-align: left;
-        }
-        
-        .gender-section {
-            background-color: #e8e8e8;
+        .gender-row {
+            background: #e0e0e0;
             font-weight: bold;
-            text-align: center;
-            padding: 4px;
-            border-top: 1.5px solid #000;
-            border-bottom: 1.5px solid #000;
             font-size: 8pt;
         }
         
-        .gender-section td:first-child {
-            text-align: left;
+        .combined-row {
+            background: #c8c8c8;
             font-weight: bold;
-        }
-        
-        .combined-total {
-            background-color: #d0d0d0;
-            font-weight: bold;
-            text-align: center;
-            padding: 4px;
-            border-top: 1.5px solid #000;
             font-size: 8pt;
         }
         
-        .combined-total td:first-child {
-            text-align: center;
-            font-weight: bold;
+        .mark-present { color: transparent; }
+        .mark-absent { color: #000; font-weight: bold; }
+        .mark-tardy { color: #555; font-weight: bold; }
+        
+        /* Bottom Section */
+        .bottom-section {
+            display: table;
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 8px 0;
+            margin-top: 8px;
         }
         
-        .bottom-sections {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 8px;
-            margin-top: 10px;
+        .bottom-box {
+            display: table-cell;
+            border: 2px solid #000;
+            padding: 6px 8px;
+            vertical-align: top;
+            font-size: 6.5pt;
+            line-height: 1.25;
+        }
+        
+        .bottom-box.guide { width: 42%; }
+        .bottom-box.codes { width: 32%; }
+        .bottom-box.summary { width: 26%; }
+        
+        .section-head {
+            font-weight: bold;
+            font-size: 7.5pt;
+            margin-bottom: 4px;
+        }
+        
+        ol {
+            margin: 2px 0 4px 14px;
+            padding: 0;
+        }
+        
+        ol li {
+            margin-bottom: 2px;
+        }
+        
+        .math-formula {
+            margin: 4px 0 4px 12px;
             font-size: 6.5pt;
         }
         
-        .guidelines-section,
-        .codes-section,
-        .summary-section {
+        .frac {
+            text-align: center;
+            margin: 2px 0;
+        }
+        
+        .frac-top {
+            border-bottom: 1px solid #000;
+            padding-bottom: 1px;
+            margin-bottom: 1px;
+        }
+        
+        .codes-list {
+            font-size: 6.5pt;
+        }
+        
+        .codes-list p {
+            margin: 2px 0;
+        }
+        
+        .codes-list .subhead {
+            font-weight: bold;
+            margin-top: 4px;
+            display: block;
+        }
+        
+        /* Summary Table */
+        .sum-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 5px 0 8px 0;
+        }
+        
+        .sum-table th,
+        .sum-table td {
             border: 1px solid #000;
-            padding: 6px;
-            height: fit-content;
+            padding: 2px 3px;
+            font-size: 6.5pt;
+            text-align: center;
         }
         
-        .section-title {
-            font-weight: bold;
-            font-size: 7pt;
-            margin-bottom: 4px;
-            text-decoration: underline;
-        }
-        
-        .guidelines-section ol {
-            margin: 0;
-            padding-left: 12px;
-        }
-        
-        .guidelines-section li {
-            margin-bottom: 2px;
-            line-height: 1.1;
-        }
-        
-        .formula {
-            margin: 4px 0;
-            font-size: 6pt;
-            line-height: 1.2;
-        }
-        
-        .formula-line {
-            text-decoration: underline;
+        .sum-table th {
+            background: #f0f0f0;
             font-weight: bold;
         }
         
-        .codes-content {
-            font-size: 6pt;
-            line-height: 1.1;
+        .sum-table td.left-align {
+            text-align: left;
+            padding-left: 4px;
         }
         
-        .codes-content p {
+        .sig-area {
+            margin-top: 6px;
+            text-align: center;
+            font-size: 6.5pt;
+        }
+        
+        .sig-line {
+            border-bottom: 1px solid #000;
+            height: 16px;
             margin: 3px 0;
         }
         
-        .summary-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 4px 0;
-        }
-        
-        .summary-table td,
-        .summary-table th {
-            border: 1px solid #000;
-            padding: 2px;
-            text-align: center;
-            font-size: 6pt;
-        }
-        
-        .summary-table th {
-            background-color: #f0f0f0;
-            font-weight: bold;
-        }
-        
-        .signature-section {
+        .page-num {
             margin-top: 8px;
-            text-align: center;
-            font-size: 6pt;
-        }
-        
-        .signature-line {
-            border-bottom: 1px solid #000;
-            width: 150px;
-            height: 15px;
-            margin: 4px auto;
-        }
-        
-        .page-footer {
-            position: absolute;
-            bottom: 10px;
-            left: 10px;
             font-size: 8pt;
             font-weight: bold;
         }
         
-        /* Print styles */
         @media print {
-            body { margin: 0; padding: 0; }
-            .page-footer { position: fixed; }
+            body {
+                padding: 0;
+                margin: 0;
+            }
+            
+            .page {
+                max-width: 100%;
+            }
+            
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            
+            .header-box, .info-section, .attendance-table, .bottom-section {
+                page-break-inside: avoid;
+            }
         }
-        
-        /* Status symbols */
-        .present { color: transparent; }
-        .absent { color: #000; font-weight: bold; }
-        .late { color: #666; font-weight: bold; }
     </style>
 </head>
 <body>
-    <!-- Header Section -->
-    <div class="header">
-        <div class="deped-logo">
-            DepEd<br>LOGO
+<div class="page">
+    <?php
+        use Carbon\Carbon;
+
+        // Month label like "October 2024"
+        $monthLabel = isset($month, $year)
+            ? Carbon::create($year, $month, 1)->format('F Y')
+            : '';
+
+        // Fixed days shown in the template header
+        $shownDays = [1,2,3,4,5,8,9,10,11,12,15,16,17,18,19,22,23,24,25,26,29,30];
+
+        // Helper to map attendance status to symbol styling
+        $renderMark = function ($status) {
+            if ($status === 'absent') return '<span class="mark-absent">/</span>';
+            if ($status === 'late' || $status === 'tardy') return '<span class="mark-tardy">T</span>';
+            // present or null defaults to present mark (invisible dot to keep cell height)
+            return '<span class="mark-present">.</span>';
+        };
+
+        // Build quick lookup: date->status per student
+        $buildDayStatus = function ($student, $month, $year) {
+            $map = [];
+            if (!empty($student->attendances)) {
+                foreach ($student->attendances as $att) {
+                    if ($att->date instanceof Carbon) {
+                        $d = (int) $att->date->day;
+                    } else {
+                        $d = (int) Carbon::parse($att->date)->day;
+                    }
+                    $map[$d] = $att->status;
+                }
+            }
+            return $map;
+        };
+
+        $formatStudentName = function ($student) {
+            // Expecting fields: last_name, first_name, middle_name or combined name
+            if (isset($student->last_name) && isset($student->first_name)) {
+                $mid = isset($student->middle_name) && $student->middle_name ? ' ' . strtoupper($student->middle_name) : '';
+                return strtoupper($student->last_name).', '.strtoupper($student->first_name).$mid;
+            }
+            return strtoupper($student->name ?? '');
+        };
+
+        $countTotals = function ($student) {
+            $p = $a = $t = 0;
+            if (!empty($student->attendances)) {
+                foreach ($student->attendances as $att) {
+                    if ($att->status === 'present') $p++;
+                    elseif ($att->status === 'absent') $a++;
+                    elseif ($att->status === 'late' || $att->status === 'tardy') $t++;
+                }
+            }
+            return [$p, $a, $t];
+        };
+    ?>
+    <div class="header-box">
+        <div class="header-row">
+            <div class="logo-left">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/a/a4/DepEd_seal.png" alt="DepEd">
+            </div>
+            <div class="header-center">
+                <div class="title-main">School Form 2 (SF2) Daily Attendance Report of Learners</div>
+                <div class="title-sub">(This replaces Form 1, Form 2 & STS Form 4 - Absenteeism and Dropout Profile)</div>
+            </div>
+            <div class="logo-right">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/a/a4/DepEd_seal.png" alt="DepEd">
+            </div>
         </div>
-        <div class="header-text">
-            <div class="republic-text">REPUBLIC OF THE PHILIPPINES</div>
-            <div class="deped-text">DEPARTMENT OF EDUCATION</div>
-            <div class="form-title">School Form 2 (SF2) Daily Attendance Report of Learners</div>
-            <div class="form-subtitle">(This replaces Form 1, Form 2 & STS Form 4 - Absenteeism and Dropout Profile)</div>
+    </div>
+    
+    <div class="info-section">
+        <div class="info-line">
+            <div class="info-item">
+                <span class="info-label">School ID</span>
+                <div class="info-box small">{{ $schoolSettings['school_id'] ?? '' }}</div>
+            </div>
+            <div class="info-item">
+                <span class="info-label">School Year</span>
+                <div class="info-box small">{{ $year ?? '' }}</div>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Report for the Month of</span>
+                <div class="info-box medium">{{ $monthLabel }}</div>
+            </div>
+        </div>
+        <div class="info-line">
+            <div class="info-item">
+                <span class="info-label">Name of School</span>
+                <div class="info-box large">{{ $schoolSettings['school_name'] ?? '' }}</div>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Grade Level</span>
+                <div class="info-box small">{{ $gradeLevel->name ?? '' }}</div>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Section</span>
+                <div class="info-box medium">{{ $section->name ?? '' }}</div>
+            </div>
         </div>
     </div>
     
-    <!-- Form Information Fields -->
-    <div class="form-info">
-        <span class="field-label">School ID</span>
-        <div class="field-value">{{ $schoolSettings['school_id'] ?? 'N/A' }}</div>
-        <span class="field-label">School Year</span>
-        <div class="field-value">{{ $year }}-{{ $year + 1 }}</div>
-        <span class="field-label">Report for the Month of</span>
-        <div class="field-value">{{ date('F Y', mktime(0, 0, 0, $month, 1, $year)) }}</div>
-    </div>
-    
-    <div class="form-info-row2">
-        <span class="field-label">Name of School</span>
-        <div class="field-value">{{ $schoolSettings['school_name'] ?? 'SAMPLE SCHOOL' }}</div>
-        <span class="field-label">Grade Level</span>
-        <div class="field-value">{{ $gradeLevel->name ?? 'N/A' }}</div>
-        <span class="field-label">Section</span>
-        <div class="field-value">{{ $section->name ?? 'N/A' }}</div>
-    </div>
-    
-    <!-- Main Attendance Table -->
-    <table class="main-table">
+    <table class="attendance-table">
         <thead>
             <tr>
-                <th rowspan="2" class="name-header">LEARNER'S NAME<br>(Last Name, First Name, Middle Name)</th>
-                @php
-                    $daysInMonth = date('t', mktime(0, 0, 0, $month, 1, $year));
-                    $schoolDays = [];
-                    $dayNames = ['M', 'T', 'W', 'TH', 'F'];
-                    
-                    for($day = 1; $day <= $daysInMonth; $day++) {
-                        $dayOfWeek = date('N', mktime(0, 0, 0, $month, $day, $year));
-                        if($dayOfWeek >= 1 && $dayOfWeek <= 5) {
-                            $schoolDays[] = $day;
-                        }
-                    }
-                    $schoolDaysCount = count($schoolDays);
-                @endphp
-                <th colspan="{{ $schoolDaysCount }}" style="font-size: 7pt;">(1st row for date)</th>
-                <th rowspan="2" class="total-header">Total for the Month</th>
-                <th rowspan="2" class="total-header">ABSENT</th>
-                <th rowspan="2" class="total-header">TARDY</th>
-                <th rowspan="2" class="remarks-header">REMARKS<br>(If DROPPED OUT, state reason, please refer to legend number 2.<br><br>If TRANSFERRED IN/OUT, write the name of School.)</th>
+                <th rowspan="3" class="num-col"></th>
+                <th rowspan="3" class="name-header">LEARNER'S NAME<br>(Last Name, First Name, Middle Name)</th>
+                <th colspan="22" style="font-size: 7.5pt; padding: 3px;">(1st row for date, 2nd row for Day: M,T,W,TH,F)</th>
+                <th colspan="3" style="font-size: 7.5pt; padding: 3px;">Total for the Month</th>
+                <th rowspan="3" class="remarks-header">REMARKS (If DROPPED OUT, state reason, please refer to legend number 2. If TRANSFERRED IN/OUT, write the name of School.)</th>
             </tr>
             <tr>
-                @foreach($schoolDays as $day)
-                    @php
-                        $dayOfWeek = date('N', mktime(0, 0, 0, $month, $day, $year));
-                        $dayName = $dayNames[$dayOfWeek - 1];
-                    @endphp
-                    <th class="day-header">{{ $dayName }}</th>
-                @endforeach
+                <th class="day-col">1</th><th class="day-col">2</th><th class="day-col">3</th><th class="day-col">4</th><th class="day-col">5</th>
+                <th class="day-col">8</th><th class="day-col">9</th><th class="day-col">10</th><th class="day-col">11</th><th class="day-col">12</th>
+                <th class="day-col">15</th><th class="day-col">16</th><th class="day-col">17</th><th class="day-col">18</th><th class="day-col">19</th>
+                <th class="day-col">22</th><th class="day-col">23</th><th class="day-col">24</th><th class="day-col">25</th><th class="day-col">26</th>
+                <th class="day-col">29</th><th class="day-col">30</th>
+                <th rowspan="2" class="total-col">Present</th>
+                <th rowspan="2" class="total-col">Absent</th>
+                <th rowspan="2" class="total-col">Tardy</th>
+            </tr>
+            <tr>
+                <th class="day-col">T</th><th class="day-col">W</th><th class="day-col">TH</th><th class="day-col">F</th><th class="day-col">M</th>
+                <th class="day-col">T</th><th class="day-col">W</th><th class="day-col">TH</th><th class="day-col">F</th><th class="day-col">M</th>
+                <th class="day-col">T</th><th class="day-col">W</th><th class="day-col">TH</th><th class="day-col">F</th><th class="day-col">M</th>
+                <th class="day-col">T</th><th class="day-col">W</th><th class="day-col">TH</th><th class="day-col">F</th><th class="day-col">M</th>
+                <th class="day-col">T</th><th class="day-col">W</th>
             </tr>
         </thead>
         <tbody>
-            <!-- Male Students Section -->
-            @if($maleStudents->count() > 0)
-                @foreach($maleStudents as $student)
+            <?php $rowNumber = 1; ?>
+            @foreach(($maleStudents ?? collect()) as $student)
+                <?php
+                    $dayStatus = $buildDayStatus($student, $month ?? null, $year ?? null);
+                    [$pTotal, $aTotal, $tTotal] = $countTotals($student);
+                ?>
                 <tr>
-                    <td class="name-cell">{{ strtoupper($student->name) }}</td>
-                    @foreach($schoolDays as $day)
-                        @php
-                            $attendanceDate = $year . '-' . str_pad($month, 2, '0', STR_PAD_LEFT) . '-' . str_pad($day, 2, '0', STR_PAD_LEFT);
-                            $attendance = $student->attendances->where('date', $attendanceDate)->first();
-                            $status = $attendance ? $attendance->status : '';
-                        @endphp
-                        <td class="day-cell">
-                            @if($status === 'present')
-                                <span class="present">P</span>
-                            @elseif($status === 'absent')
-                                <span class="absent">/</span>
-                            @elseif($status === 'late')
-                                <span class="late">T</span>
-                            @endif
-                        </td>
+                    <td class="num-col">{{ $rowNumber }}</td>
+                    <td class="name-col">{{ $formatStudentName($student) }}</td>
+                    @foreach($shownDays as $d)
+                        <td class="day-col">{!! $renderMark($dayStatus[$d] ?? 'present') !!}</td>
                     @endforeach
-                    <td class="total-cell">{{ $student->attendances->where('status', 'present')->count() + $student->attendances->where('status', 'late')->count() }}</td>
-                    <td class="total-cell">{{ $student->attendances->where('status', 'absent')->count() }}</td>
-                    <td class="total-cell">{{ $student->attendances->where('status', 'late')->count() }}</td>
-                    <td class="remarks-cell">{{ $student->remarks ?? '' }}</td>
+                    <td class="total-col">{{ $pTotal }}</td>
+                    <td class="total-col">{{ $aTotal }}</td>
+                    <td class="total-col">{{ $tTotal }}</td>
+                    <td class="remarks-col"></td>
                 </tr>
-                @endforeach
-                
-                <!-- Male Total Row -->
-                <tr class="gender-section">
-                    <td>⟵ MALE | TOTAL Per Day ⟶</td>
-                    @foreach($schoolDays as $day)
-                        <td></td>
-                    @endforeach
-                    <td></td><td></td><td></td><td></td>
-                </tr>
-            @endif
-            
-            <!-- Female Students Section -->
-            @if($femaleStudents->count() > 0)
-                @foreach($femaleStudents as $student)
+                <?php $rowNumber++; ?>
+            @endforeach
+
+            <tr class="gender-row">
+                <td class="num-col">{{ $rowNumber }}</td>
+                <td colspan="25">⟵ MALE | TOTAL Per Day ⟶</td>
+            </tr>
+            <?php $rowNumber++; ?>
+
+            @foreach(($femaleStudents ?? collect()) as $student)
+                <?php
+                    $dayStatus = $buildDayStatus($student, $month ?? null, $year ?? null);
+                    [$pTotal, $aTotal, $tTotal] = $countTotals($student);
+                ?>
                 <tr>
-                    <td class="name-cell">{{ strtoupper($student->name) }}</td>
-                    @foreach($schoolDays as $day)
-                        @php
-                            $attendanceDate = $year . '-' . str_pad($month, 2, '0', STR_PAD_LEFT) . '-' . str_pad($day, 2, '0', STR_PAD_LEFT);
-                            $attendance = $student->attendances->where('date', $attendanceDate)->first();
-                            $status = $attendance ? $attendance->status : '';
-                        @endphp
-                        <td class="day-cell">
-                            @if($status === 'present')
-                                <span class="present">P</span>
-                            @elseif($status === 'absent')
-                                <span class="absent">/</span>
-                            @elseif($status === 'late')
-                                <span class="late">T</span>
-                            @endif
-                        </td>
+                    <td class="num-col">{{ $rowNumber }}</td>
+                    <td class="name-col">{{ $formatStudentName($student) }}</td>
+                    @foreach($shownDays as $d)
+                        <td class="day-col">{!! $renderMark($dayStatus[$d] ?? 'present') !!}</td>
                     @endforeach
-                    <td class="total-cell">{{ $student->attendances->where('status', 'present')->count() + $student->attendances->where('status', 'late')->count() }}</td>
-                    <td class="total-cell">{{ $student->attendances->where('status', 'absent')->count() }}</td>
-                    <td class="total-cell">{{ $student->attendances->where('status', 'late')->count() }}</td>
-                    <td class="remarks-cell">{{ $student->remarks ?? '' }}</td>
+                    <td class="total-col">{{ $pTotal }}</td>
+                    <td class="total-col">{{ $aTotal }}</td>
+                    <td class="total-col">{{ $tTotal }}</td>
+                    <td class="remarks-col"></td>
                 </tr>
-                @endforeach
-                
-                <!-- Female Total Row -->
-                <tr class="gender-section">
-                    <td>⟵ FEMALE | TOTAL Per Day ⟶</td>
-                    @foreach($schoolDays as $day)
-                        <td></td>
-                    @endforeach
-                    <td></td><td></td><td></td><td></td>
-                </tr>
-            @endif
-            
-            <!-- Combined Total Row -->
-            <tr class="combined-total">
-                <td><strong>Combined TOTAL PER DAY</strong></td>
-                @foreach($schoolDays as $day)
-                    <td></td>
-                @endforeach
-                <td></td><td></td><td></td><td></td>
+                <?php $rowNumber++; ?>
+            @endforeach
+
+            <tr class="gender-row">
+                <td class="num-col">{{ $rowNumber }}</td>
+                <td colspan="25">⟵ FEMALE | TOTAL Per Day ⟶</td>
+            </tr>
+            <?php $rowNumber++; ?>
+
+            <tr class="combined-row">
+                <td class="num-col">{{ $rowNumber }}</td>
+                <td colspan="25">⟵ Combined TOTAL PER DAY ⟶</td>
             </tr>
         </tbody>
     </table>
     
-    <!-- Bottom Section with Guidelines, Codes, and Summary -->
-    <div class="bottom-sections">
-        <!-- Guidelines Section -->
-        <div class="guidelines-section">
-            <div class="section-title">GUIDELINES:</div>
+    <div class="bottom-section">
+        <div class="bottom-box guide">
+            <div class="section-head">GUIDELINES:</div>
             <ol>
                 <li>The attendance shall be accomplished daily. Refer to the codes for checking learners' attendance.</li>
-                <li>Learner's Name shall be written in the following format: Last Name, First Name, Middle Name.</li>
+                <li>Dates shall be written in the preceding columns beside Learner's Name.</li>
                 <li>To compute the following:</li>
             </ol>
-            
-            <div class="formula">
-                <strong>a. Percentage of Enrollment =</strong><br>
-                <span class="formula-line">Registered Learners as of end of the month</span> × 100<br>
-                Enrolled at the Beginning of School year
+            <div class="math-formula">
+                <div><strong>a.</strong> <em>Percentage of Enrollment =</em></div>
+                <div class="frac">
+                    <div class="frac-top">Registered Learner as of End of the Month</div>
+                    <div>Enrolment as of 1st Friday of June</div>
+                </div>
+                <div>× 100</div>
             </div>
-            
-            <div class="formula">
-                <strong>b. Average Daily Attendance =</strong><br>
-                <span class="formula-line">Total Daily Attendance</span><br>
-                Number of School Days in reporting month
+            <div class="math-formula">
+                <div><strong>b.</strong> <em>Average Daily Attendance =</em></div>
+                <div class="frac">
+                    <div class="frac-top">Total Daily Attendance</div>
+                    <div>Number of School Days in reporting month</div>
+                </div>
             </div>
-            
-            <div class="formula">
-                <strong>c. Percentage of Attendance for the month =</strong><br>
-                <span class="formula-line">Average daily attendance</span> × 100<br>
-                Registered Learners as of end of the month
+            <div class="math-formula">
+                <div><strong>c.</strong> <em>Percentage of Attendance for the month =</em></div>
+                <div class="frac">
+                    <div class="frac-top">Average daily attendance</div>
+                    <div>Registered Learner as of End of the month</div>
+                </div>
+                <div>× 100</div>
             </div>
-            
             <ol start="4">
-                <li>Every end of the month, the class adviser will submit this form to the office of the principal for recording of summary table into School Form 10.</li>
+                <li>Every End of the month, the class adviser will submit this form to the office of the principal for recording of summary table into the school register.</li>
                 <li>Once signed by the principal, this form should be returned to the class adviser.</li>
-                <li>The adviser will provide necessary interventions including but not limited to home visitation to learners who were absent for 5 consecutive days and/or those at risk of dropping out.</li>
-                <li>Attendance performance of learners will be reflected in Form 137 and Form 138 every grading period.</li>
+                <li>The adviser will extend necessary intervention including but not limited to home visitation to learners that committed 5 consecutive days of absences or those with potentials of dropping out</li>
+                <li>Attendance performance of learner is expected to be reflected in Form 137 and Form 138 every grading period</li>
             </ol>
-            <p><strong>*</strong> Beginning of School Year cut-off report is every 1st Friday of the School Year</p>
+            <p style="margin-top: 3px;"><strong>*</strong> Beginning of School Year cut-off report is every 1st Friday of School Calendar Days</p>
         </div>
         
-        <!-- Codes Section -->
-        <div class="codes-section">
-            <div class="section-title">1. CODES FOR CHECKING ATTENDANCE</div>
-            <div class="codes-content">
-                <p>(blank) = Present; (/) = Absent; (T) = Tardy (Half-shaded Upper for Late Coming); (X) = Lower for Early Out); ★ = Suspended/Others; Lower for Cutting Classes</p>
+        <div class="bottom-box codes">
+            <div class="section-head">1. CODES FOR CHECKING ATTENDANCE</div>
+            <div class="codes-list">
+                <p><strong>blank-Present; (+)-Absent; Tardy (half shaded= Upper for Late Commer; Lower for Cutting Classes)</strong></p>
             </div>
-            
-            <div class="section-title">2. REASONS/CAUSES FOR DROPPING OUT</div>
-            <div class="codes-content">
-                <p><strong>a. Economic-Related Factors</strong><br>
-                a.1. Lack of personal care or savings<br>
-                a.2. Early marriage<br>
-                a.3. Engaged in income-generating activities/livelihood<br>
-                a.4. Family problems</p>
-                
-                <p><strong>b. Individual-Related Factors</strong><br>
-                b.1. Illness; b.2. Overage; b.3. Death/substance<br>
-                b.4. Drug Abuse; b.5. Poor academic performance<br>
-                b.6. Lack of interest/low self esteem<br>
-                b.7. Hunger/Malnutrition</p>
-                
-                <p><strong>c. School-Related Factors</strong><br>
-                c.1. Teacher Factor<br>
-                c.2. Physical condition of classroom<br>
-                c.3. Peer influence</p>
-                
-                <p><strong>d. Geographical/Environmental</strong><br>
-                d.1. Distance between home and school<br>
-                d.2. Armed conflict (incl. Tribal wars & conflicting)<br>
-                d.3. Calamities/Disasters</p>
-                
-                <p><strong>e. Financial-Related</strong><br>
-                e.1. Child labor, work</p>
-                
-                <p><strong>f. Others (Specify)</strong></p>
+            <div class="section-head" style="margin-top: 5px;">2. REASONS/CAUSES OF DROP-OUTS</div>
+            <div class="codes-list">
+                <span class="subhead">a. Domestic-Related Factors</span>
+                <p>a.1. Had to take care of siblings<br>a.2. Early marriage/pregnancy<br>a.3. Parents' attitude toward schooling<br>a.4. Family problems</p>
+                <span class="subhead">b. Individual-Related Factors</span>
+                <p>b.1. Illness<br>b.2. Overage<br>b.3. Death<br>b.4. Drug Abuse<br>b.5. Poor academic performance<br>b.6. Lack of interest/Distractions<br>b.7. Hunger/Malnutrition</p>
+                <span class="subhead">c. School-Related Factors</span>
+                <p>c.1. Teacher Factor<br>c.2. Physical condition of classroom<br>c.3. Peer influence</p>
+                <span class="subhead">d. Geographic/Environmental</span>
+                <p>d.1. Distance between home and school<br>d.2. Armed conflict (incl. Tribal wars & clanfeuds)<br>d.3. Calamities/Disasters</p>
+                <span class="subhead">e. Financial-Related</span>
+                <p>e.1. Child labor, work</p>
+                <span class="subhead">f. Others</span>
             </div>
         </div>
         
-        <!-- Summary Section -->
-        <div class="summary-section">
-            <div class="section-title">Month: {{ date('F Y', mktime(0, 0, 0, $month, 1, $year)) }}</div>
-            
-            <p style="text-align: center; font-weight: bold; margin: 4px 0;">
-                <strong>No. of Days of Classes: {{ $schoolDaysCount }}</strong>
-            </p>
-            
-            <table class="summary-table">
+        <div class="bottom-box summary">
+            <div class="section-head">Month: _________________</div>
+            <table class="sum-table">
                 <tr>
-                    <th>Summary</th>
+                    <th rowspan="2">Summary for the<br>Month</th>
+                    <th colspan="3">No. of Days of<br>Classes</th>
+                </tr>
+                <tr>
                     <th>M</th>
                     <th>F</th>
                     <th>TOTAL</th>
                 </tr>
                 <tr>
-                    <td>Enrollment</td>
-                    <td>{{ $summary['male_count'] }}</td>
-                    <td>{{ $summary['female_count'] }}</td>
-                    <td>{{ $summary['total_students'] }}</td>
+                    <td class="left-align"><em>* Enrolment as of (1st Friday of June)</em></td>
+                    <td>{{ $summary['male_count'] ?? '' }}</td>
+                    <td>{{ $summary['female_count'] ?? '' }}</td>
+                    <td>{{ $summary['total_students'] ?? '' }}</td>
+                </tr>
+                <tr>
+                    <td class="left-align"><em>Late Enrolment during the month (beyond cut-off)</em></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td class="left-align"><strong>Registered Learner as of end of the month</strong></td>
+                    <td>{{ $summary['male_count'] ?? '' }}</td>
+                    <td>{{ $summary['female_count'] ?? '' }}</td>
+                    <td>{{ $summary['total_students'] ?? '' }}</td>
+                </tr>
+                <tr>
+                    <td class="left-align"><strong>Percentage of Enrolment as of end of the month</strong></td>
+                    <td colspan="3">{{ $summary['percentage_enrolment'] ?? '' }}%</td>
+                </tr>
+                <tr>
+                    <td class="left-align"><strong>Average Daily Attendance</strong></td>
+                    <td colspan="3">{{ $summary['average_daily_attendance'] ?? '' }}</td>
+                </tr>
+                <tr>
+                    <td class="left-align"><strong>Percentage of Attendance for the month</strong></td>
+                    <td colspan="3">{{ $summary['percentage_attendance'] ?? '' }}%</td>
+                </tr>
+                <tr>
+                    <td class="left-align"><strong>Number of students with 5 consecutive days of absences</strong></td>
+                    <td colspan="3"></td>
+                </tr>
+                <tr style="border-top: 2px solid #000;">
+                    <td class="left-align"><strong>Drop out</strong></td>
+                    <td colspan="3"></td>
+                </tr>
+                <tr>
+                    <td class="left-align"><strong>Transferred out</strong></td>
+                    <td colspan="3"></td>
+                </tr>
+                <tr>
+                    <td class="left-align"><strong>Transferred in</strong></td>
+                    <td colspan="3"></td>
                 </tr>
             </table>
             
-            <div style="font-size: 6pt; line-height: 1.2; margin-top: 4px;">
-                <p><strong>* Enrollment as of (1st Friday of June)</strong></p>
-                <p><strong>Late Enrollment during the month (Beyond cut-off)</strong></p>
-                <p><strong>Registered Learners as of end of the month:</strong> {{ $summary['total_students'] }}</p>
-                <p><strong>Percentage of Enrollment as of end of the month:</strong> {{ $summary['percentage_enrolment'] ?? 'N/A' }}%</p>
-                <p><strong>Average Daily Attendance:</strong> {{ $summary['average_daily_attendance'] }}</p>
-                <p><strong>Percentage of Attendance for the month:</strong> {{ $summary['percentage_attendance'] }}%</p>
-                <p><strong>Number of students absent for 5 consecutive days:</strong> ___</p>
-                <p><strong>Drop out:</strong> ___</p>
-                <p><strong>Transferred out:</strong> ___</p>
-                <p><strong>Transferred in:</strong> ___</p>
-            </div>
-            
-            <div class="signature-section">
-                <p style="font-style: italic;">I certify that this is a true and correct report.</p>
-                <div class="signature-line"></div>
+            <div class="sig-area">
+                <p><em>I certify that this is a true and correct report.</em></p>
+                <div class="sig-line"></div>
                 <p>(Signature of Teacher over Printed Name)</p>
                 <p style="margin-top: 8px;"><strong>Attested by:</strong></p>
-                <div class="signature-line"></div>
+                <div class="sig-line"></div>
                 <p>(Signature of School Head over Printed Name)</p>
             </div>
         </div>
     </div>
     
-    <div class="page-footer">School Form 2: Page __ of ______</div>
+    <div class="page-num">School Form 2: Page 2 of _______</div>
+</div>
 </body>
 </html>
